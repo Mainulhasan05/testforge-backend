@@ -30,7 +30,7 @@ class SessionController {
       const { orgId } = req.params;
       const { page, limit } = getPaginationParams(req.query);
       const filters = {
-        status: req.query.status,
+        status: req.query.status || "active",
         assignee: req.query.assignee,
         startDate: req.query.startDate,
         endDate: req.query.endDate,

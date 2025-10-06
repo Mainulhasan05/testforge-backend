@@ -9,16 +9,12 @@ const {
 } = require("../validators/caseValidator");
 
 router.post(
-  "/features/:featureId/cases",
+  "/:featureId/cases",
   authenticate,
   validate(createCaseSchema),
   caseController.createCase
 );
-router.get(
-  "/features/:featureId/cases",
-  authenticate,
-  caseController.getFeatureCases
-);
+router.get("/:featureId/cases", authenticate, caseController.getFeatureCases);
 router.get("/cases/:caseId", authenticate, caseController.getCaseById);
 router.put(
   "/cases/:caseId",
