@@ -56,7 +56,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.index({ email: 1 });
+// userSchema.index({ email: 1 });
 userSchema.index({ "organizations.orgId": 1 });
 
 userSchema.methods.toJSON = function () {

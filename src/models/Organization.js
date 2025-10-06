@@ -37,7 +37,7 @@ const organizationSchema = new mongoose.Schema(
   }
 );
 
-organizationSchema.index({ slug: 1 });
+// organizationSchema.index({ slug: 1 });
 organizationSchema.index({ owners: 1 });
 organizationSchema.index({ members: 1 });
 
