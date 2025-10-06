@@ -8,12 +8,12 @@ const {
 class OrganizationController {
   async createOrganization(req, res, next) {
     try {
-      const { name, slug } = req.body;
+      const { name, description } = req.body;
 
       const organization = await organizationService.createOrganization(
         name,
-        slug,
-        req.user._id
+        req.user._id,
+        description
       );
 
       sendSuccess(
@@ -24,9 +24,6 @@ class OrganizationController {
         201
       );
     } catch (error) {
-      if (error.message === "Organization slug already exists") {
-        return sendError(res, error.message, "SLUG_EXISTS", {}, 409);
-      }
       next(error);
     }
   }
@@ -60,6 +57,29 @@ class OrganizationController {
     } catch (error) {
       if (error.message === "Organization not found") {
         return sendError(res, error.message, "ORG_NOT_FOUND", {}, 404);
+      }
+      next(error);
+    }
+  }
+
+  async updateOrganization(req, res, next) {
+    try {
+      const { orgId } = req.params;
+      const { name, description } = req.body;
+
+      const organization = await organizationService.updateOrganization(
+        orgId,
+        req.user._id,
+        { name, description }
+      );
+
+      sendSuccess(res, organization, "Organization updated successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("Only owners")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
       }
       next(error);
     }
@@ -115,6 +135,60 @@ class OrganizationController {
         error.message.includes("Only")
       ) {
         return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
+
+  async getOrganizationMembers(req, res, next) {
+    try {
+      const { orgId } = req.params;
+      const { page, limit } = getPaginationParams(req.query);
+
+      const { members, total } =
+        await organizationService.getOrganizationMembers(
+          orgId,
+          req.user._id,
+          page,
+          limit
+        );
+
+      const meta = getPaginationMeta(page, limit, total);
+
+      sendSuccess(res, members, null, meta);
+    } catch (error) {
+      if (error.message === "Organization not found") {
+        return sendError(res, error.message, "ORG_NOT_FOUND", {}, 404);
+      }
+      if (error.message === "Access denied") {
+        return sendError(res, error.message, "ACCESS_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
+
+  async updateMemberRole(req, res, next) {
+    try {
+      const { orgId, userId } = req.params;
+      const { role } = req.body;
+
+      const organization = await organizationService.updateMemberRole(
+        orgId,
+        userId,
+        req.user._id,
+        role
+      );
+
+      sendSuccess(res, organization, "Member role updated successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("Only owners")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      if (error.message.includes("not a member")) {
+        return sendError(res, error.message, "NOT_MEMBER", {}, 400);
       }
       next(error);
     }

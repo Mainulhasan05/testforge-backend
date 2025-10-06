@@ -12,7 +12,7 @@ const changeLogRoutes = require("./changeLogRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
-router.use("/organizations", organizationRoutes);
+router.use("/orgs", organizationRoutes);
 router.use("/api", sessionRoutes);
 router.use("/api", featureRoutes);
 router.use("/api", caseRoutes);

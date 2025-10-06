@@ -51,7 +51,8 @@ const seedData = async () => {
 
     const org = await Organization.create({
       name: "Demo Organization",
-      slug: "demo-org",
+      slug: "demo-organization",
+      description: "This is a demo organization for testing purposes",
       owners: [owner._id],
       members: [owner._id, admin._id, tester1._id, tester2._id],
     });

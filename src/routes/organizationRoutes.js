@@ -5,7 +5,9 @@ const { authenticate } = require("../middlewares/auth");
 const validate = require("../middlewares/validate");
 const {
   createOrganizationSchema,
+  updateOrganizationSchema,
   addMemberSchema,
+  updateMemberRoleSchema,
 } = require("../validators/organizationValidator");
 
 router.post(
@@ -16,11 +18,28 @@ router.post(
 );
 router.get("/", authenticate, organizationController.getUserOrganizations);
 router.get("/:orgId", authenticate, organizationController.getOrganizationById);
+router.put(
+  "/:orgId",
+  authenticate,
+  validate(updateOrganizationSchema),
+  organizationController.updateOrganization
+);
 router.post(
   "/:orgId/members",
   authenticate,
   validate(addMemberSchema),
   organizationController.addMember
+);
+router.get(
+  "/:orgId/members",
+  authenticate,
+  organizationController.getOrganizationMembers
+);
+router.put(
+  "/:orgId/members/:userId",
+  authenticate,
+  validate(updateMemberRoleSchema),
+  organizationController.updateMemberRole
 );
 router.delete(
   "/:orgId/members/:userId",

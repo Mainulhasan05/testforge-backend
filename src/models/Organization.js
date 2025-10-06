@@ -14,6 +14,11 @@ const organizationSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    description: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     owners: [
       {
         type: mongoose.Schema.Types.ObjectId,

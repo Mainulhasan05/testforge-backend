@@ -2,12 +2,7 @@ const Joi = require("joi");
 
 const createOrganizationSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
-  slug: Joi.string()
-    .min(2)
-    .max(50)
-    .lowercase()
-    .pattern(/^[a-z0-9-]+$/)
-    .required(),
+  description: Joi.string().max(1000).allow(""),
 });
 
 const addMemberSchema = Joi.object({

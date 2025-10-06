@@ -1,16 +1,16 @@
 const Organization = require("../models/Organization");
 const User = require("../models/User");
+const { generateSlug, generateUniqueSlug } = require("../utils/slugify");
 
 class OrganizationService {
-  async createOrganization(name, slug, ownerId) {
-    const existingOrg = await Organization.findOne({ slug });
-    if (existingOrg) {
-      throw new Error("Organization slug already exists");
-    }
+  async createOrganization(name, ownerId, description = "") {
+    const baseSlug = generateSlug(name);
+    const slug = await generateUniqueSlug(Organization, baseSlug);
 
     const organization = await Organization.create({
       name,
       slug,
+      description,
       owners: [ownerId],
       members: [ownerId],
     });
@@ -89,17 +89,14 @@ class OrganizationService {
 
     if (updateData.name) {
       organization.name = updateData.name;
+
+      const baseSlug = generateSlug(updateData.name);
+      const newSlug = await generateUniqueSlug(Organization, baseSlug);
+      organization.slug = newSlug;
     }
 
-    if (updateData.slug) {
-      const existingOrg = await Organization.findOne({
-        slug: updateData.slug,
-        _id: { $ne: orgId },
-      });
-      if (existingOrg) {
-        throw new Error("Organization slug already exists");
-      }
-      organization.slug = updateData.slug;
+    if (updateData.description !== undefined) {
+      organization.description = updateData.description;
     }
 
     await organization.save();
