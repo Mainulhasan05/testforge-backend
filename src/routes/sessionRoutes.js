@@ -9,13 +9,13 @@ const {
 } = require("../validators/sessionValidator");
 
 router.post(
-  "/organizations/:orgId/sessions",
+  "/:orgId/sessions",
   authenticate,
   validate(createSessionSchema),
   sessionController.createSession
 );
 router.get(
-  "/organizations/:orgId/sessions",
+  "/:orgId/sessions",
   authenticate,
   sessionController.getOrganizationSessions
 );

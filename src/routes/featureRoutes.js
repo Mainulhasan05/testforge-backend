@@ -9,13 +9,13 @@ const {
 } = require("../validators/featureValidator");
 
 router.post(
-  "/sessions/:sessionId/features",
+  "/:sessionId/features",
   authenticate,
   validate(createFeatureSchema),
   featureController.createFeature
 );
 router.get(
-  "/sessions/:sessionId/features",
+  "/:sessionId/features",
   authenticate,
   featureController.getSessionFeatures
 );

@@ -24,8 +24,8 @@ const sessionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["draft", "open", "in_progress", "completed", "archived"],
-      default: "draft",
+      enum: ["active", "completed", "archived"],
+      default: "active",
     },
     assignees: [
       {
@@ -33,11 +33,11 @@ const sessionSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    startAt: {
+    startDate: {
       type: Date,
       default: null,
     },
-    endAt: {
+    endDate: {
       type: Date,
       default: null,
     },
