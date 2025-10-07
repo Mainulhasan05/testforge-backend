@@ -18,7 +18,7 @@ const seedData = async () => {
 
     console.log("Seeding database...");
 
-    const passwordHash = await bcrypt.hash("password123", config.bcrypt.rounds);
+    const passwordHash = await bcrypt.hash("123456", config.bcrypt.rounds);
 
     const users = await User.create([
       {
@@ -92,7 +92,7 @@ const seedData = async () => {
       createdBy: owner._id,
       title: "Q1 2025 Testing Session",
       description: "Comprehensive testing for Q1 release features",
-      status: "open",
+      status: "active",
       assignees: [tester1._id, tester2._id],
       startAt: new Date("2025-01-15"),
       endAt: new Date("2025-03-31"),
@@ -163,10 +163,10 @@ const seedData = async () => {
 
     console.log("Database seeded successfully!");
     console.log("\nDemo credentials:");
-    console.log("Owner: owner@example.com / password123");
-    console.log("Admin: admin@example.com / password123");
-    console.log("Tester 1: tester1@example.com / password123");
-    console.log("Tester 2: tester2@example.com / password123");
+    console.log("Owner: owner@example.com / 123456");
+    console.log("Admin: admin@example.com / 123456");
+    console.log("Tester 1: tester1@example.com / 123456");
+    console.log("Tester 2: tester2@example.com / 123456");
   } catch (error) {
     console.error("Error seeding database:", error);
     throw error;

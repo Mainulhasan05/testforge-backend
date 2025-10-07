@@ -6,13 +6,13 @@ const validate = require("../middlewares/validate");
 const { createFeedbackSchema } = require("../validators/feedbackValidator");
 
 router.post(
-  "/cases/:caseId/feedback",
+  "/:caseId/feedback",
   authenticate,
   validate(createFeedbackSchema),
   feedbackController.createFeedback
 );
 router.get(
-  "/cases/:caseId/feedback",
+  "/:caseId/feedback",
   authenticate,
   feedbackController.getCaseFeedback
 );

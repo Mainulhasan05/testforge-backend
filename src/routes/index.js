@@ -16,7 +16,7 @@ router.use("/orgs", organizationRoutes);
 router.use("/orgs", sessionRoutes);
 router.use("/sessions", featureRoutes);
 router.use("/features", caseRoutes);
-router.use("/api", feedbackRoutes);
+router.use("/cases", feedbackRoutes);
 router.use("/api", changeLogRoutes);
 
 module.exports = router;
