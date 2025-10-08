@@ -1,5 +1,7 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const crypto = require("crypto");
+const emailService = require("../utils/emailService");  
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -111,7 +113,17 @@ class AuthService {
       throw new Error("No account found with this email");
     }
 
+    // const resetToken = crypto
+    //   .getRandomValues(new Uint8Array(32))
+    //   .toString("hex");
+    // const hashedToken = crypto
+    //   .createHash("sha256")
+    //   .update(resetToken)
+    //   .digest("hex");
+    // ✅ Use Node.js crypto.randomBytes
     const resetToken = crypto.randomBytes(32).toString("hex");
+
+    // ✅ Hash the token using Node.js crypto.createHash
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
