@@ -9,6 +9,7 @@ const featureRoutes = require("./featureRoutes");
 const caseRoutes = require("./caseRoutes");
 const feedbackRoutes = require("./feedbackRoutes");
 const changeLogRoutes = require("./changeLogRoutes");
+const invitationRoutes = require("./invitationRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -18,5 +19,6 @@ router.use("/sessions", featureRoutes);
 router.use("/features", caseRoutes);
 router.use("/cases", feedbackRoutes);
 router.use("/api", changeLogRoutes);
+router.use("/invitations", invitationRoutes);
 
 module.exports = router;

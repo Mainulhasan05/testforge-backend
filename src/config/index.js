@@ -17,4 +17,14 @@ module.exports = {
   bcrypt: {
     rounds: parseInt(process.env.BCRYPT_ROUNDS) || 10,
   },
+
+  email: {
+    host: process.env.EMAIL_HOST || "mail.mainulhasan99.xyz",
+    port: parseInt(process.env.EMAIL_PORT) || 465,
+    secure: process.env.EMAIL_SECURE === "true",
+    user: process.env.EMAIL_USER,
+    password: process.env.EMAIL_PASSWORD,
+    from: process.env.EMAIL_FROM || "noreply@mainulhasan99.xyz",
+  },
+  frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
 };

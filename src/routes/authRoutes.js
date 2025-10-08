@@ -8,6 +8,10 @@ const {
   loginSchema,
   refreshTokenSchema,
 } = require("../validators/authValidator");
+const {
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} = require("../validators/invitationValidator");
 
 router.post("/signup", validate(signupSchema), authController.signup);
 router.post("/login", validate(loginSchema), authController.login);
@@ -17,5 +21,16 @@ router.post(
   authController.refreshToken
 );
 router.post("/logout", authenticate, authController.logout);
+router.post(
+  "/forgot-password",
+  validate(forgotPasswordSchema),
+  authController.forgotPassword
+);
+router.get("/verify-reset-token/:token", authController.verifyResetToken);
+router.post(
+  "/reset-password",
+  validate(resetPasswordSchema),
+  authController.resetPassword
+);
 
 module.exports = router;

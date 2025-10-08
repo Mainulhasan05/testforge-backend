@@ -2,11 +2,12 @@ const app = require("./app");
 const config = require("./config");
 const connectDB = require("./config/database");
 const seedData = require("./utils/seed");
+const emailService = require("./utils/emailService");
 
 const startServer = async () => {
   try {
     await connectDB();
-
+    await emailService.verifyConnection();
     await seedData();
 
     const server = app.listen(config.port, () => {

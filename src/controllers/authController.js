@@ -97,6 +97,51 @@ class AuthController {
       next(error);
     }
   }
+
+  async forgotPassword(req, res, next) {
+    try {
+      const { email } = req.body;
+
+      const result = await authService.forgotPassword(email);
+
+      sendSuccess(res, null, result.message);
+    } catch (error) {
+      if (error.message === "No account found with this email") {
+        return sendError(res, error.message, "USER_NOT_FOUND", {}, 404);
+      }
+      next(error);
+    }
+  }
+
+  async verifyResetToken(req, res, next) {
+    try {
+      const { token } = req.params;
+
+      const result = await authService.verifyResetToken(token);
+
+      sendSuccess(res, result, "Token is valid");
+    } catch (error) {
+      if (error.message.includes("Invalid or expired")) {
+        return sendError(res, error.message, "INVALID_TOKEN", {}, 400);
+      }
+      next(error);
+    }
+  }
+
+  async resetPassword(req, res, next) {
+    try {
+      const { token, password } = req.body;
+
+      const result = await authService.resetPassword(token, password);
+
+      sendSuccess(res, null, result.message);
+    } catch (error) {
+      if (error.message.includes("Invalid or expired")) {
+        return sendError(res, error.message, "INVALID_TOKEN", {}, 400);
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new AuthController();
