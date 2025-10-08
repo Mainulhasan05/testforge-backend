@@ -3,7 +3,9 @@ const config = require("./index");
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(config.mongodb.uri);
+    await mongoose.connect(config.mongodb.uri, {
+      family: 4, // 👈 Force IPv4 to avoid IPv6 connection issues
+    });
     console.log("MongoDB connected successfully");
   } catch (error) {
     console.error("MongoDB connection error:", error);
