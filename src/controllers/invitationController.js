@@ -161,6 +161,25 @@ class InvitationController {
       next(error);
     }
   }
+
+  async getUserInvitations(req, res, next) {
+    try {
+      const { page, limit } = getPaginationParams(req.query);
+      const userEmail = req.user.email;
+
+      const { invitations, total } = await invitationService.getUserInvitations(
+        userEmail,
+        page,
+        limit
+      );
+
+      const meta = getPaginationMeta(page, limit, total);
+
+      sendSuccess(res, invitations, null, meta);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new InvitationController();

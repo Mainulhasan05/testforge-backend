@@ -245,6 +245,30 @@ class InvitationService {
       role: invitation.role,
     };
   }
+
+  async getUserInvitations(userEmail, page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+
+    const [invitations, total] = await Promise.all([
+      Invitation.find({
+        email: userEmail,
+        status: "pending",
+        expiresAt: { $gt: new Date() },
+      })
+        .populate("orgId", "name description")
+        .populate("invitedBy", "fullName email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Invitation.countDocuments({
+        email: userEmail,
+        status: "pending",
+        expiresAt: { $gt: new Date() },
+      }),
+    ]);
+
+    return { invitations, total };
+  }
 }
 
 module.exports = new InvitationService();

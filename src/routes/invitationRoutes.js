@@ -9,8 +9,9 @@ const {
   declineInvitationSchema,
 } = require("../validators/invitationValidator");
 
+router.get("/", authenticate, invitationController.getUserInvitations);
 router.post(
-  "/organizations/:orgId/invitations",
+  "/:orgId/invite",
   authenticate,
   validate(createInvitationSchema),
   invitationController.createInvitation
