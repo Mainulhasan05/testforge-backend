@@ -11,6 +11,7 @@ const {
 
 router.get("/", authenticate, invitationController.getUserInvitations);
 router.get("/count", authenticate, invitationController.getUserInvitationCount);
+router.get("/verify/:token", invitationController.verifyInvitationToken);
 router.post(
   "/:orgId/invite",
   authenticate,
@@ -22,10 +23,6 @@ router.get(
   authenticate,
   invitationController.getOrganizationInvitations
 );
-router.get(
-  "/invitations/verify/:token",
-  invitationController.verifyInvitationToken
-);
 router.post(
   "/accept",
   authenticate,
@@ -33,17 +30,17 @@ router.post(
   invitationController.acceptInvitation
 );
 router.post(
-  "/invitations/decline",
+  "/decline",
   validate(declineInvitationSchema),
   invitationController.declineInvitation
 );
 router.delete(
-  "/invitations/:invitationId",
+  "/:invitationId",
   authenticate,
   invitationController.cancelInvitation
 );
 router.post(
-  "/invitations/:invitationId/resend",
+  "/:invitationId/resend",
   authenticate,
   invitationController.resendInvitation
 );
