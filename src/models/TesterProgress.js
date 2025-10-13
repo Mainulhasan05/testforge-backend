@@ -120,7 +120,8 @@ testerProgressSchema.methods.updateProgress = function (
   caseId,
   featureId,
   result,
-  isUpdate = false
+  isUpdate = false,
+  previousResult = null
 ) {
   // Update last tested time
   this.lastTestedAt = new Date();
@@ -153,16 +154,38 @@ testerProgressSchema.methods.updateProgress = function (
 
   // Update counts
   if (!isUpdate) {
+    // New feedback
     this.testedCases += 1;
     featureProgress.testedCases += 1;
-  }
 
-  if (result === "pass") {
-    this.passedCases += isUpdate ? 0 : 1;
-    featureProgress.passedCases += isUpdate ? 0 : 1;
-  } else if (result === "fail") {
-    this.failedCases += isUpdate ? 0 : 1;
-    featureProgress.failedCases += isUpdate ? 0 : 1;
+    if (result === "pass") {
+      this.passedCases += 1;
+      featureProgress.passedCases += 1;
+    } else if (result === "fail") {
+      this.failedCases += 1;
+      featureProgress.failedCases += 1;
+    }
+  } else {
+    // Update existing feedback - handle result changes
+    if (previousResult && previousResult !== result) {
+      // Decrement previous result count
+      if (previousResult === "pass") {
+        this.passedCases = Math.max(0, this.passedCases - 1);
+        featureProgress.passedCases = Math.max(0, featureProgress.passedCases - 1);
+      } else if (previousResult === "fail") {
+        this.failedCases = Math.max(0, this.failedCases - 1);
+        featureProgress.failedCases = Math.max(0, featureProgress.failedCases - 1);
+      }
+
+      // Increment new result count
+      if (result === "pass") {
+        this.passedCases += 1;
+        featureProgress.passedCases += 1;
+      } else if (result === "fail") {
+        this.failedCases += 1;
+        featureProgress.failedCases += 1;
+      }
+    }
   }
 
   // Calculate progress percentage
@@ -174,11 +197,19 @@ testerProgressSchema.methods.updateProgress = function (
   // Check if completed
   if (this.testedCases >= this.totalCases && this.totalCases > 0) {
     this.status = "completed";
-    this.completedAt = new Date();
-    this.activityLog.push({
-      action: "completed",
-      timestamp: new Date(),
-    });
+    if (!this.completedAt) {
+      this.completedAt = new Date();
+      this.activityLog.push({
+        action: "completed",
+        timestamp: new Date(),
+      });
+    }
+  } else {
+    // Reset completed status if no longer completed
+    if (this.status === "completed") {
+      this.status = "in_progress";
+      this.completedAt = null;
+    }
   }
 
   // Add activity log

@@ -169,7 +169,8 @@ class FeedbackService {
         feedback.caseId,
         testCase.featureId,
         updateData.result,
-        true // isUpdate
+        true, // isUpdate
+        before.result // previousResult
       );
     }
 
@@ -182,7 +183,8 @@ class FeedbackService {
     caseId,
     featureId,
     result,
-    isUpdate
+    isUpdate,
+    previousResult = null
   ) {
     // Get or create tester progress
     let progress = await TesterProgress.findOne({ sessionId, testerId: userId });
@@ -203,7 +205,7 @@ class FeedbackService {
     }
 
     // Update progress
-    await progress.updateProgress(caseId, featureId, result, isUpdate);
+    await progress.updateProgress(caseId, featureId, result, isUpdate, previousResult);
 
     return progress;
   }

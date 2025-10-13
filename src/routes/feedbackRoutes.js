@@ -5,6 +5,7 @@ const { authenticate } = require("../middlewares/auth");
 const validate = require("../middlewares/validate");
 const { createFeedbackSchema } = require("../validators/feedbackValidator");
 
+// Routes for case-specific feedback (mounted at /cases)
 router.post(
   "/:caseId/feedback",
   authenticate,
@@ -21,19 +22,21 @@ router.get(
   authenticate,
   feedbackController.getUserFeedbackForCase
 );
+
+// Routes for individual feedback operations (mounted at /feedback)
 router.get(
-  "/feedback/:feedbackId",
+  "/:feedbackId",
   authenticate,
   feedbackController.getFeedbackById
 );
 router.put(
-  "/feedback/:feedbackId",
+  "/:feedbackId",
   authenticate,
   validate(createFeedbackSchema),
   feedbackController.updateFeedback
 );
 router.delete(
-  "/feedback/:feedbackId",
+  "/:feedbackId",
   authenticate,
   feedbackController.deleteFeedback
 );
