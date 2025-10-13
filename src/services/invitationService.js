@@ -269,6 +269,16 @@ class InvitationService {
 
     return { invitations, total };
   }
+
+  async getUserInvitationCount(userEmail) {
+    const count = await Invitation.countDocuments({
+      email: userEmail,
+      status: "pending",
+      expiresAt: { $gt: new Date() },
+    });
+
+    return count;
+  }
 }
 
 module.exports = new InvitationService();

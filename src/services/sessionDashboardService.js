@@ -181,6 +181,136 @@ class SessionDashboardService {
 
     return allProgress;
   }
+
+  /**
+   * Get feature-wise statistics with tester information
+   */
+  async getFeatureStatistics(sessionId, userId) {
+    // 1. Get session and verify access
+    const session = await Session.findById(sessionId)
+      .populate("orgId", "name slug")
+      .populate("assignees", "fullName email");
+
+    if (!session) {
+      throw new Error("Session not found");
+    }
+
+    const user = await User.findById(userId);
+    const userOrg = user.organizations.find(
+      (o) => o.orgId.toString() === session.orgId._id.toString()
+    );
+
+    if (!userOrg) {
+      throw new Error("Access denied");
+    }
+
+    // 2. Get all features
+    const features = await Feature.find({ sessionId }).populate(
+      "createdBy",
+      "fullName email"
+    );
+
+    const featureStats = [];
+
+    for (const feature of features) {
+      // Get all cases for this feature
+      const cases = await Case.find({ featureId: feature._id });
+      const caseIds = cases.map((c) => c._id);
+
+      // Get all feedback for these cases
+      const allFeedback = await Feedback.find({
+        caseId: { $in: caseIds },
+      }).populate("testerId", "fullName email");
+
+      // Calculate overall stats
+      const totalCases = cases.length;
+      const passedCases = allFeedback.filter((f) => f.result === "pass").length;
+      const failedCases = allFeedback.filter((f) => f.result === "fail").length;
+
+      // Get unique testers
+      const testerMap = {};
+      allFeedback.forEach((feedback) => {
+        const testerId = feedback.testerId._id.toString();
+        if (!testerMap[testerId]) {
+          testerMap[testerId] = {
+            id: testerId,
+            name: feedback.testerId.fullName,
+            email: feedback.testerId.email,
+            tested: 0,
+            passed: 0,
+            failed: 0,
+          };
+        }
+        testerMap[testerId].tested++;
+        if (feedback.result === "pass") {
+          testerMap[testerId].passed++;
+        } else if (feedback.result === "fail") {
+          testerMap[testerId].failed++;
+        }
+      });
+
+      const testerStats = Object.values(testerMap);
+
+      // Get assignees who haven't tested yet
+      const assigneesNotTested = session.assignees.filter((assignee) => {
+        return !testerMap[assignee._id.toString()];
+      });
+
+      featureStats.push({
+        id: feature._id,
+        title: feature.title,
+        description: feature.description,
+        totalCases,
+        totalTests: allFeedback.length,
+        passedCases,
+        failedCases,
+        testedCases: new Set(allFeedback.map((f) => f.caseId.toString())).size,
+        untestedCases:
+          totalCases -
+          new Set(allFeedback.map((f) => f.caseId.toString())).size,
+        completionPercentage:
+          totalCases > 0
+            ? Math.round(
+                (new Set(allFeedback.map((f) => f.caseId.toString())).size /
+                  totalCases) *
+                  100
+              )
+            : 0,
+        passRate:
+          allFeedback.length > 0
+            ? Math.round((passedCases / allFeedback.length) * 100)
+            : 0,
+        testerStats,
+        assigneesNotTested: assigneesNotTested.map((a) => ({
+          id: a._id,
+          name: a.fullName,
+          email: a.email,
+        })),
+      });
+    }
+
+    return {
+      session: {
+        id: session._id,
+        title: session.title,
+        status: session.status,
+      },
+      features: featureStats,
+      summary: {
+        totalFeatures: features.length,
+        totalCases: featureStats.reduce((sum, f) => sum + f.totalCases, 0),
+        totalTests: featureStats.reduce((sum, f) => sum + f.totalTests, 0),
+        overallPassRate:
+          featureStats.reduce((sum, f) => sum + f.totalTests, 0) > 0
+            ? Math.round(
+                (featureStats.reduce((sum, f) => sum + f.passedCases, 0) /
+                  featureStats.reduce((sum, f) => sum + f.totalTests, 0)) *
+                  100
+              )
+            : 0,
+      },
+    };
+  }
 }
 
 module.exports = new SessionDashboardService();

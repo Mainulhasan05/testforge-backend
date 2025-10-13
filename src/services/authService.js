@@ -1,7 +1,9 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const Invitation = require("../models/Invitation");
+const Organization = require("../models/Organization");
 const crypto = require("crypto");
-const emailService = require("../utils/emailService");  
+const emailService = require("../utils/emailService");
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -10,7 +12,7 @@ const {
 const config = require("../config");
 
 class AuthService {
-  async signup(email, fullName, password) {
+  async signup(email, fullName, password, invitationToken = null) {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       throw new Error("Email already exists");
@@ -30,10 +32,62 @@ class AuthService {
     user.refreshTokens.push({ token: refreshToken });
     await user.save();
 
+    // Handle invitation if token provided
+    let autoJoinedOrganization = null;
+    if (invitationToken) {
+      try {
+        const invitation = await Invitation.findOne({
+          token: invitationToken,
+          status: "pending",
+          expiresAt: { $gt: new Date() },
+        }).populate("orgId");
+
+        if (invitation && invitation.email.toLowerCase() === email.toLowerCase()) {
+          // Add user to organization
+          const organization = await Organization.findById(invitation.orgId);
+          organization.members.push(user._id);
+
+          if (invitation.role === "owner") {
+            organization.owners.push(user._id);
+          }
+
+          await organization.save();
+
+          // Add organization to user
+          user.organizations.push({
+            orgId: invitation.orgId._id,
+            role: invitation.role,
+          });
+          await user.save();
+
+          // Mark invitation as accepted
+          invitation.status = "accepted";
+          await invitation.save();
+
+          autoJoinedOrganization = {
+            id: organization._id,
+            name: organization.name,
+            role: invitation.role,
+          };
+
+          // Send welcome email
+          await emailService.sendWelcomeEmail(
+            user.email,
+            user.fullName,
+            organization.name
+          );
+        }
+      } catch (error) {
+        console.error("Error processing invitation during signup:", error);
+        // Don't fail signup if invitation processing fails
+      }
+    }
+
     return {
       user,
       accessToken,
       refreshToken,
+      autoJoinedOrganization,
     };
   }
 

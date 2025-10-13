@@ -10,6 +10,7 @@ const {
 } = require("../validators/invitationValidator");
 
 router.get("/", authenticate, invitationController.getUserInvitations);
+router.get("/count", authenticate, invitationController.getUserInvitationCount);
 router.post(
   "/:orgId/invite",
   authenticate,

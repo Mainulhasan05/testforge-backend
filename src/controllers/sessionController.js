@@ -116,6 +116,27 @@ class SessionController {
       next(error);
     }
   }
+
+  async duplicateSession(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+
+      const session = await sessionService.duplicateSession(
+        sessionId,
+        req.user._id
+      );
+
+      sendSuccess(res, session, "Session duplicated successfully", null, 201);
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("Only owners")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new SessionController();

@@ -24,4 +24,11 @@ router.get(
   sessionDashboardController.getAllTestersProgress
 );
 
+// Get feature-wise statistics with tester information
+router.get(
+  "/:sessionId/feature-statistics",
+  authenticate,
+  sessionDashboardController.getFeatureStatistics
+);
+
 module.exports = router;

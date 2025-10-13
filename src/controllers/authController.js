@@ -4,18 +4,26 @@ const { sendSuccess, sendError } = require("../utils/response");
 class AuthController {
   async signup(req, res, next) {
     try {
-      const { email, fullName, password } = req.body;
+      const { email, fullName, password, invitationToken } = req.body;
 
-      const result = await authService.signup(email, fullName, password);
+      const result = await authService.signup(email, fullName, password, invitationToken);
+
+      const responseData = {
+        user: result.user,
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      };
+
+      if (result.autoJoinedOrganization) {
+        responseData.autoJoinedOrganization = result.autoJoinedOrganization;
+      }
 
       sendSuccess(
         res,
-        {
-          user: result.user,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-        },
-        "User registered successfully",
+        responseData,
+        result.autoJoinedOrganization
+          ? `User registered and joined ${result.autoJoinedOrganization.name}`
+          : "User registered successfully",
         null,
         201
       );

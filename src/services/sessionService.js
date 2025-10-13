@@ -1,5 +1,7 @@
 const Session = require("../models/Session");
 const User = require("../models/User");
+const Feature = require("../models/Feature");
+const Case = require("../models/Case");
 const changeLogService = require("./changeLogService");
 
 class SessionService {
@@ -170,6 +172,89 @@ class SessionService {
     await Session.findByIdAndDelete(sessionId);
 
     return session;
+  }
+
+  async duplicateSession(sessionId, userId) {
+    // Get original session
+    const originalSession = await Session.findById(sessionId);
+    if (!originalSession) {
+      throw new Error("Session not found");
+    }
+
+    // Verify user has access
+    const user = await User.findById(userId);
+    const userOrg = user.organizations.find(
+      (o) => o.orgId.toString() === originalSession.orgId.toString()
+    );
+
+    if (!userOrg || !["owner", "admin"].includes(userOrg.role)) {
+      throw new Error("Only owners and admins can duplicate sessions");
+    }
+
+    // Create new session with "Copy of" prefix
+    const newSession = await Session.create({
+      orgId: originalSession.orgId,
+      createdBy: userId,
+      title: `Copy of ${originalSession.title}`,
+      description: originalSession.description,
+      status: "pending", // Reset to pending
+      assignees: originalSession.assignees,
+      startAt: originalSession.startAt,
+      endAt: originalSession.endAt,
+    });
+
+    // Get all features from original session
+    const features = await Feature.find({ sessionId: sessionId });
+
+    // Map to store old feature ID -> new feature ID
+    const featureMap = {};
+
+    // Duplicate all features
+    for (const feature of features) {
+      const newFeature = await Feature.create({
+        sessionId: newSession._id,
+        createdBy: userId,
+        title: feature.title,
+        description: feature.description,
+      });
+
+      featureMap[feature._id.toString()] = newFeature._id;
+
+      // Get all cases for this feature
+      const cases = await Case.find({ featureId: feature._id });
+
+      // Duplicate all cases
+      for (const testCase of cases) {
+        await Case.create({
+          featureId: newFeature._id,
+          createdBy: userId,
+          title: testCase.title,
+          note: testCase.note,
+          expectedOutput: testCase.expectedOutput,
+          priority: testCase.priority,
+        });
+      }
+    }
+
+    await changeLogService.createLog(
+      "Session",
+      newSession._id,
+      "create",
+      userId,
+      null,
+      {
+        ...newSession.toObject(),
+        duplicatedFrom: originalSession._id,
+      }
+    );
+
+    // Return populated session
+    const populatedSession = await Session.findById(newSession._id)
+      .populate("createdBy", "fullName email")
+      .populate("assignees", "fullName email")
+      .populate("orgId", "name slug");
+
+    return populatedSession;
   }
 }
 

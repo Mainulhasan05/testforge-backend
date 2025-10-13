@@ -35,5 +35,10 @@ router.delete(
   authenticate,
   sessionController.deleteSession
 );
+router.post(
+  "/sessions/:sessionId/duplicate",
+  authenticate,
+  sessionController.duplicateSession
+);
 
 module.exports = router;

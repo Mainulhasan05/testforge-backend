@@ -180,6 +180,18 @@ class InvitationController {
       next(error);
     }
   }
+
+  async getUserInvitationCount(req, res, next) {
+    try {
+      const userEmail = req.user.email;
+
+      const count = await invitationService.getUserInvitationCount(userEmail);
+
+      sendSuccess(res, { count }, null);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new InvitationController();

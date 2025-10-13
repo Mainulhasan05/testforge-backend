@@ -58,6 +58,27 @@ class SessionDashboardController {
       next(error);
     }
   }
+
+  async getFeatureStatistics(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+
+      const statistics = await sessionDashboardService.getFeatureStatistics(
+        sessionId,
+        req.user._id
+      );
+
+      sendSuccess(res, statistics);
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message === "Access denied") {
+        return sendError(res, error.message, "ACCESS_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new SessionDashboardController();
