@@ -13,10 +13,12 @@ app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// set trust proxy to true to get ip address of the user from the request
+app.set("trust proxy", true);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 10000,
   message: {
     success: false,
     data: null,
