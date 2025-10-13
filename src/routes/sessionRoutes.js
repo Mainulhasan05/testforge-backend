@@ -40,5 +40,15 @@ router.post(
   authenticate,
   sessionController.duplicateSession
 );
+router.post(
+  "/sessions/:sessionId/assign",
+  authenticate,
+  sessionController.assignUser
+);
+router.post(
+  "/sessions/:sessionId/unassign",
+  authenticate,
+  sessionController.unassignUser
+);
 
 module.exports = router;

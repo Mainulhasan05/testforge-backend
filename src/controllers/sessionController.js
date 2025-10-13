@@ -137,6 +137,55 @@ class SessionController {
       next(error);
     }
   }
+
+  async assignUser(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+      const { userId } = req.body;
+
+      const session = await sessionService.assignUser(
+        sessionId,
+        userId,
+        req.user._id
+      );
+
+      sendSuccess(res, session, "User assigned successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("permission") || error.message.includes("Only")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      if (error.message.includes("already assigned")) {
+        return sendError(res, error.message, "ALREADY_ASSIGNED", {}, 409);
+      }
+      next(error);
+    }
+  }
+
+  async unassignUser(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+      const { userId } = req.body;
+
+      const session = await sessionService.unassignUser(
+        sessionId,
+        userId,
+        req.user._id
+      );
+
+      sendSuccess(res, session, "User unassigned successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("permission") || error.message.includes("Only")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new SessionController();

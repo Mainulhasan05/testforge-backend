@@ -256,6 +256,103 @@ class SessionService {
 
     return populatedSession;
   }
+
+  async assignUser(sessionId, userId, assignedBy) {
+    const session = await Session.findById(sessionId);
+    if (!session) {
+      throw new Error("Session not found");
+    }
+
+    // Verify the person assigning has permission
+    const assigningUser = await User.findById(assignedBy);
+    const userOrg = assigningUser.organizations.find(
+      (o) => o.orgId.toString() === session.orgId.toString()
+    );
+
+    if (!userOrg || !["owner", "admin"].includes(userOrg.role)) {
+      throw new Error("Only owners and admins can assign users to sessions");
+    }
+
+    // Check if user is already assigned
+    if (session.assignees.includes(userId)) {
+      throw new Error("User is already assigned to this session");
+    }
+
+    // Verify the user being assigned is a member of the organization
+    const userToAssign = await User.findById(userId);
+    if (!userToAssign) {
+      throw new Error("User to assign not found");
+    }
+
+    const targetUserOrg = userToAssign.organizations.find(
+      (o) => o.orgId.toString() === session.orgId.toString()
+    );
+
+    if (!targetUserOrg) {
+      throw new Error("User is not a member of this organization");
+    }
+
+    const before = session.toObject();
+
+    // Add user to assignees
+    session.assignees.push(userId);
+    await session.save();
+
+    await changeLogService.createLog(
+      "Session",
+      session._id,
+      "update",
+      assignedBy,
+      before,
+      session.toObject()
+    );
+
+    // Return populated session
+    return await Session.findById(sessionId)
+      .populate("createdBy", "fullName email")
+      .populate("assignees", "fullName email")
+      .populate("orgId", "name slug");
+  }
+
+  async unassignUser(sessionId, userId, unassignedBy) {
+    const session = await Session.findById(sessionId);
+    if (!session) {
+      throw new Error("Session not found");
+    }
+
+    // Verify the person unassigning has permission
+    const unassigningUser = await User.findById(unassignedBy);
+    const userOrg = unassigningUser.organizations.find(
+      (o) => o.orgId.toString() === session.orgId.toString()
+    );
+
+    if (!userOrg || !["owner", "admin"].includes(userOrg.role)) {
+      throw new Error("Only owners and admins can unassign users from sessions");
+    }
+
+    const before = session.toObject();
+
+    // Remove user from assignees
+    session.assignees = session.assignees.filter(
+      (assigneeId) => assigneeId.toString() !== userId.toString()
+    );
+    await session.save();
+
+    await changeLogService.createLog(
+      "Session",
+      session._id,
+      "update",
+      unassignedBy,
+      before,
+      session.toObject()
+    );
+
+    // Return populated session
+    return await Session.findById(sessionId)
+      .populate("createdBy", "fullName email")
+      .populate("assignees", "fullName email")
+      .populate("orgId", "name slug");
+  }
 }
 
 module.exports = new SessionService();
