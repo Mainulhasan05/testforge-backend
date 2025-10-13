@@ -218,6 +218,13 @@ class CaseService {
       null
     );
 
+    // Delete all related feedback
+    await Feedback.deleteMany({ caseId });
+
+    // Delete all related tester progress entries
+    const TesterProgress = require("../models/TesterProgress");
+    await TesterProgress.deleteMany({ caseId });
+
     await Case.findByIdAndDelete(caseId);
 
     return testCase;

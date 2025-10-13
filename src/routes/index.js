@@ -17,6 +17,7 @@ router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/orgs", organizationRoutes);
 router.use("/orgs", sessionRoutes);
+router.use("/sessions", sessionRoutes); // Add direct session routes for duplicate, assign, unassign
 router.use("/sessions", featureRoutes);
 router.use("/sessions", sessionDashboardRoutes); // Add dashboard routes
 router.use("/features", caseRoutes);

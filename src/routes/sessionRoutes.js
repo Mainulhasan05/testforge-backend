@@ -36,13 +36,13 @@ router.delete(
   sessionController.deleteSession
 );
 router.post(
-  "/sessions/:sessionId/duplicate",
+  "/:sessionId/duplicate",
   authenticate,
   sessionController.duplicateSession
 );
 router.post("/:sessionId/assign", authenticate, sessionController.assignUser);
 router.post(
-  "/sessions/:sessionId/unassign",
+  "/:sessionId/unassign",
   authenticate,
   sessionController.unassignUser
 );

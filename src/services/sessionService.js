@@ -197,10 +197,10 @@ class SessionService {
       createdBy: userId,
       title: `Copy of ${originalSession.title}`,
       description: originalSession.description,
-      status: "pending", // Reset to pending
+      status: "active", // Reset to active (default)
       assignees: originalSession.assignees,
-      startAt: originalSession.startAt,
-      endAt: originalSession.endAt,
+      startDate: originalSession.startDate,
+      endDate: originalSession.endDate,
     });
 
     // Get all features from original session
