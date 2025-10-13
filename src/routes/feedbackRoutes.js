@@ -17,9 +17,25 @@ router.get(
   feedbackController.getCaseFeedback
 );
 router.get(
+  "/:caseId/feedback/my",
+  authenticate,
+  feedbackController.getUserFeedbackForCase
+);
+router.get(
   "/feedback/:feedbackId",
   authenticate,
   feedbackController.getFeedbackById
+);
+router.put(
+  "/feedback/:feedbackId",
+  authenticate,
+  validate(createFeedbackSchema),
+  feedbackController.updateFeedback
+);
+router.delete(
+  "/feedback/:feedbackId",
+  authenticate,
+  feedbackController.deleteFeedback
 );
 
 module.exports = router;

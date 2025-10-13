@@ -74,6 +74,64 @@ class FeedbackController {
       next(error);
     }
   }
+
+  async getUserFeedbackForCase(req, res, next) {
+    try {
+      const { caseId } = req.params;
+
+      const feedback = await feedbackService.getUserFeedbackForCase(
+        caseId,
+        req.user._id
+      );
+
+      sendSuccess(res, feedback);
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      next(error);
+    }
+  }
+
+  async updateFeedback(req, res, next) {
+    try {
+      const { feedbackId } = req.params;
+
+      const feedback = await feedbackService.updateFeedback(
+        feedbackId,
+        req.user._id,
+        req.body
+      );
+
+      sendSuccess(res, feedback, "Feedback updated successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("only update your own")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
+
+  async deleteFeedback(req, res, next) {
+    try {
+      const { feedbackId } = req.params;
+
+      await feedbackService.deleteFeedback(feedbackId, req.user._id);
+
+      sendSuccess(res, null, "Feedback deleted successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("only delete your own")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new FeedbackController();

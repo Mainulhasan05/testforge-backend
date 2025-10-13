@@ -86,20 +86,30 @@ class CaseService {
       Case.countDocuments(query),
     ]);
 
-    const casesWithLatestFeedback = await Promise.all(
+    const casesWithFeedback = await Promise.all(
       cases.map(async (testCase) => {
+        // Get the latest feedback overall
         const latestFeedback = await Feedback.findOne({ caseId: testCase._id })
+          .sort({ createdAt: -1 })
+          .populate("testerId", "fullName email");
+
+        // Get the current user's feedback
+        const userFeedback = await Feedback.findOne({
+          caseId: testCase._id,
+          testerId: userId,
+        })
           .sort({ createdAt: -1 })
           .populate("testerId", "fullName email");
 
         return {
           ...testCase.toObject(),
           latestFeedback,
+          userFeedback, // Add user's own feedback
         };
       })
     );
 
-    return { cases: casesWithLatestFeedback, total };
+    return { cases: casesWithFeedback, total };
   }
 
   async getCaseById(caseId, userId) {

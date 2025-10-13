@@ -11,14 +11,17 @@ const feedbackRoutes = require("./feedbackRoutes");
 const changeLogRoutes = require("./changeLogRoutes");
 const invitationRoutes = require("./invitationRoutes");
 const statisticsRoutes = require("./statisticsRoutes");
+const sessionDashboardRoutes = require("./sessionDashboardRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
 router.use("/orgs", organizationRoutes);
 router.use("/orgs", sessionRoutes);
 router.use("/sessions", featureRoutes);
+router.use("/sessions", sessionDashboardRoutes); // Add dashboard routes
 router.use("/features", caseRoutes);
 router.use("/cases", feedbackRoutes);
+router.use("/feedback", feedbackRoutes); // Add direct feedback route for update/delete
 router.use("/api", changeLogRoutes);
 router.use("/invitations", invitationRoutes);
 router.use("/statistics", statisticsRoutes);

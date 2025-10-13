@@ -26,7 +26,7 @@ router.get(
   invitationController.verifyInvitationToken
 );
 router.post(
-  "/invitations/accept",
+  "/accept",
   authenticate,
   validate(acceptInvitationSchema),
   invitationController.acceptInvitation
