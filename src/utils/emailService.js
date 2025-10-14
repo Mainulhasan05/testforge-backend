@@ -199,6 +199,58 @@ class EmailService {
 
     return this.sendEmail(email, "Welcome to Test Session Platform", html);
   }
+
+  async sendCompletionEmail(email, userName, sessionName, totalCases) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #10B981; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
+            .achievement { text-align: center; padding: 20px; background: white; border-radius: 10px; margin: 20px 0; }
+            .achievement-icon { font-size: 64px; margin-bottom: 10px; }
+            .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+            .stat-item { text-align: center; }
+            .stat-number { font-size: 32px; font-weight: bold; color: #10B981; }
+            .stat-label { font-size: 14px; color: #666; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎊 Congratulations! 🎊</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${userName},</p>
+              <div class="achievement">
+                <div class="achievement-icon">🏆</div>
+                <h2 style="margin: 10px 0; color: #10B981;">100% Completion!</h2>
+                <p style="color: #666;">You've completed all test cases in the session</p>
+              </div>
+              <p>Amazing work! You've successfully tested all <strong>${totalCases}</strong> test cases in the <strong>${sessionName}</strong> session.</p>
+              <p>Your dedication and thoroughness in testing helps ensure the quality of our product. The team appreciates your hard work!</p>
+              <p><strong>What's next?</strong></p>
+              <ul>
+                <li>Review any failed test cases and provide detailed feedback</li>
+                <li>Check out other active sessions that need testing</li>
+                <li>Share your testing insights with the team</li>
+              </ul>
+              <p>Keep up the excellent work!<br>Test Session Platform Team</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail(email, `🎉 Session Completed: ${sessionName}`, html);
+  }
 }
 
 module.exports = new EmailService();

@@ -23,7 +23,7 @@ router.use("/sessions", sessionDashboardRoutes); // Add dashboard routes
 router.use("/features", caseRoutes);
 router.use("/cases", feedbackRoutes);
 router.use("/feedback", feedbackRoutes); // Add direct feedback route for update/delete
-router.use("/api", changeLogRoutes);
+router.use("/changelog", changeLogRoutes);
 router.use("/invitations", invitationRoutes);
 router.use("/statistics", statisticsRoutes);
 

@@ -45,6 +45,11 @@ const testerProgressSchema = new mongoose.Schema(
       enum: ["not_started", "in_progress", "completed"],
       default: "not_started",
     },
+    // Email notification tracking
+    completionEmailSent: {
+      type: Boolean,
+      default: false,
+    },
     // Timestamps
     startedAt: {
       type: Date,

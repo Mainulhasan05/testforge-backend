@@ -71,7 +71,7 @@ class FeatureService {
     const [features, total] = await Promise.all([
       Feature.find(query)
         .populate("createdBy", "fullName email")
-        .sort({ createdAt: -1 })
+        .sort({ sortOrder: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit),
       Feature.countDocuments(query),

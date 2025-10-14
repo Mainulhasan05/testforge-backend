@@ -8,7 +8,7 @@ const startServer = async () => {
   try {
     await connectDB();
     await emailService.verifyConnection();
-    await seedData();
+    // await seedData();
 
     const server = app.listen(config.port, () => {
       console.log(`Server running on port ${config.port}`);

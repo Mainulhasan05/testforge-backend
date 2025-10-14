@@ -80,7 +80,7 @@ class CaseService {
     const [cases, total] = await Promise.all([
       Case.find(query)
         .populate("createdBy", "fullName email")
-        .sort({ createdAt: -1 })
+        .sort({ sortOrder: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit),
       Case.countDocuments(query),

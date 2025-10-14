@@ -5,6 +5,7 @@ const Session = require("../models/Session");
 const User = require("../models/User");
 const TesterProgress = require("../models/TesterProgress");
 const changeLogService = require("./changeLogService");
+const emailService = require("../utils/emailService");
 
 class FeedbackService {
   async createFeedback(caseId, userId, feedbackData) {
@@ -42,7 +43,7 @@ class FeedbackService {
     );
 
     // Update tester progress
-    await this.updateTesterProgress(
+    const progress = await this.updateTesterProgress(
       session._id,
       userId,
       caseId,
@@ -50,6 +51,9 @@ class FeedbackService {
       feedbackData.result,
       false // isUpdate
     );
+
+    // Check if tester reached 100% completion and send email
+    await this.checkAndSendCompletionEmail(progress, userId, session);
 
     return feedback;
   }
@@ -233,6 +237,42 @@ class FeedbackService {
     await Feedback.findByIdAndDelete(feedbackId);
 
     return feedback;
+  }
+
+  async checkAndSendCompletionEmail(progress, userId, session) {
+    try {
+      // Check if progress reached 100%
+      if (progress.progressPercentage === 100) {
+        // Check if we already sent the email (to avoid sending multiple times)
+        if (progress.completionEmailSent) {
+          return;
+        }
+
+        // Get user details
+        const user = await User.findById(userId);
+        if (!user) {
+          console.error("User not found for completion email");
+          return;
+        }
+
+        // Send completion email
+        await emailService.sendCompletionEmail(
+          user.email,
+          user.fullName,
+          session.title,
+          progress.totalCases
+        );
+
+        // Mark email as sent to avoid duplicate emails
+        progress.completionEmailSent = true;
+        await progress.save();
+
+        console.log(`✓ Completion email sent to ${user.email} for session ${session.title}`);
+      }
+    } catch (error) {
+      console.error("Error sending completion email:", error);
+      // Don't throw error to avoid breaking the feedback flow
+    }
   }
 }
 
