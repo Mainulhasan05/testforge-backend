@@ -1,0 +1,43 @@
+name: Deploy Testforge Backend to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          timeout: 900s
+          script: |
+            # Load NVM if using Node via NVM
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+            # Go to project directory
+            cd /root/projects/testforge-backend
+
+            # If project not cloned yet, clone it
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/Mainulhasan05/testforge-backend.git .
+            fi
+
+            # Pull latest code
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Install dependencies
+            npm install --force --silent
+
+            # Restart backend using PM2
+            pm2 reload testforge-api || pm2 start npm --name "testforge-api" -- start
+            pm2 save
