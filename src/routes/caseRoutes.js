@@ -6,8 +6,15 @@ const validate = require("../middlewares/validate");
 const {
   createCaseSchema,
   updateCaseSchema,
+  bulkCreateCasesSchema,
 } = require("../validators/caseValidator");
 
+router.post(
+  "/:featureId/cases/bulk",
+  authenticate,
+  validate(bulkCreateCasesSchema),
+  caseController.bulkCreateCases
+);
 router.post(
   "/:featureId/cases",
   authenticate,

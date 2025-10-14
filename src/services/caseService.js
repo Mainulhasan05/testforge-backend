@@ -229,6 +229,55 @@ class CaseService {
 
     return testCase;
   }
+
+  async bulkCreateCases(featureId, userId, casesData) {
+    const feature = await Feature.findById(featureId).populate("sessionId");
+    if (!feature) {
+      throw new Error("Feature not found");
+    }
+
+    const session = await Session.findById(feature.sessionId);
+    const user = await User.findById(userId);
+    const userOrg = user.organizations.find(
+      (o) => o.orgId.toString() === session.orgId.toString()
+    );
+
+    const isAssigned = session.assignees.some(
+      (a) => a.toString() === userId.toString()
+    );
+
+    if (
+      !userOrg ||
+      (!["owner", "admin"].includes(userOrg.role) && !isAssigned)
+    ) {
+      throw new Error("Access denied");
+    }
+
+    // Create all test cases
+    const casesToCreate = casesData.map((caseData) => ({
+      featureId,
+      createdBy: userId,
+      ...caseData,
+    }));
+
+    const createdCases = await Case.insertMany(casesToCreate);
+
+    // Create changelog entries for all cases
+    await Promise.all(
+      createdCases.map((testCase) =>
+        changeLogService.createLog(
+          "Case",
+          testCase._id,
+          "create",
+          userId,
+          null,
+          testCase.toObject()
+        )
+      )
+    );
+
+    return createdCases;
+  }
 }
 
 module.exports = new CaseService();

@@ -116,6 +116,35 @@ class CaseController {
       next(error);
     }
   }
+
+  async bulkCreateCases(req, res, next) {
+    try {
+      const { featureId } = req.params;
+      const { cases } = req.body;
+
+      const createdCases = await caseService.bulkCreateCases(
+        featureId,
+        req.user._id,
+        cases
+      );
+
+      sendSuccess(
+        res,
+        createdCases,
+        `${createdCases.length} cases created successfully`,
+        null,
+        201
+      );
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message === "Access denied") {
+        return sendError(res, error.message, "ACCESS_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new CaseController();
