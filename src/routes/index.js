@@ -12,6 +12,7 @@ const changeLogRoutes = require("./changeLogRoutes");
 const invitationRoutes = require("./invitationRoutes");
 const statisticsRoutes = require("./statisticsRoutes");
 const sessionDashboardRoutes = require("./sessionDashboardRoutes");
+const aiRoutes = require("./aiRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -28,5 +29,6 @@ router.use("/feedback", feedbackRoutes); // Direct feedback route: /feedback/:fe
 router.use("/changelog", changeLogRoutes);
 router.use("/invitations", invitationRoutes);
 router.use("/statistics", statisticsRoutes);
+router.use("/ai", aiRoutes); // AI test case generation routes
 
 module.exports = router;

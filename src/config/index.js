@@ -27,4 +27,8 @@ module.exports = {
     from: process.env.EMAIL_FROM || "noreply@mainulhasan99.xyz",
   },
   frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
+  ai: {
+    bytezApiKey: process.env.BYTEZ_API_KEY,
+    geminiApiKey: process.env.GEMINI_API_KEY,
+  },
 };
