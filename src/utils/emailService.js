@@ -251,6 +251,191 @@ class EmailService {
 
     return this.sendEmail(email, `🎉 Session Completed: ${sessionName}`, html);
   }
+
+  async sendSessionAssignmentEmail(
+    email,
+    userName,
+    sessionName,
+    sessionDescription,
+    organizationName,
+    assignedByName,
+    sessionId,
+    startDate,
+    endDate,
+    totalFeatures,
+    totalCases
+  ) {
+    const sessionUrl = `${config.frontendUrl}/sessions/${sessionId}`;
+    const formattedStartDate = startDate
+      ? new Date(startDate).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "Not specified";
+    const formattedEndDate = endDate
+      ? new Date(endDate).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "Not specified";
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #3B82F6; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
+            .button { display: inline-block; padding: 12px 30px; background-color: #3B82F6; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .info-box { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #3B82F6; }
+            .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+            .info-row:last-child { border-bottom: none; }
+            .info-label { font-weight: bold; color: #666; }
+            .info-value { color: #333; }
+            .stats-container { display: flex; justify-content: space-around; margin: 20px 0; }
+            .stat-box { text-align: center; padding: 15px; background: white; border-radius: 8px; flex: 1; margin: 0 5px; }
+            .stat-number { font-size: 28px; font-weight: bold; color: #3B82F6; }
+            .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>📋 New Test Session Assignment</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${userName},</p>
+              <p>You've been assigned to a new test session by <strong>${assignedByName}</strong>.</p>
+
+              <div class="info-box">
+                <h3 style="margin-top: 0; color: #3B82F6;">${sessionName}</h3>
+                <p style="color: #666; margin: 10px 0;">${
+                  sessionDescription || "No description provided"
+                }</p>
+                <div class="info-row">
+                  <span class="info-label">Organization:</span>
+                  <span class="info-value">${organizationName}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Start Date:</span>
+                  <span class="info-value">${formattedStartDate}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">End Date:</span>
+                  <span class="info-value">${formattedEndDate}</span>
+                </div>
+              </div>
+
+              <div class="stats-container">
+                <div class="stat-box">
+                  <div class="stat-number">${totalFeatures || 0}</div>
+                  <div class="stat-label">Features</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-number">${totalCases || 0}</div>
+                  <div class="stat-label">Test Cases</div>
+                </div>
+              </div>
+
+              <p><strong>What you need to do:</strong></p>
+              <ul>
+                <li>Review the session details and test cases</li>
+                <li>Execute tests according to the test case specifications</li>
+                <li>Provide feedback (Pass/Fail) for each test case</li>
+                <li>Add detailed comments for any issues found</li>
+              </ul>
+
+              <center>
+                <a href="${sessionUrl}" class="button">View Test Session</a>
+              </center>
+
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; color: #3B82F6;">${sessionUrl}</p>
+
+              <p>If you have any questions about this assignment, please reach out to ${assignedByName} or your team lead.</p>
+
+              <p>Best regards,<br>Test Session Platform Team</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail(
+      email,
+      `You've been assigned to test session: ${sessionName}`,
+      html
+    );
+  }
+
+  async sendSessionUnassignmentEmail(
+    email,
+    userName,
+    sessionName,
+    organizationName,
+    unassignedByName,
+    reason = null
+  ) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #6B7280; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 5px 5px; }
+            .info-box { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #6B7280; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>📋 Test Session Assignment Removed</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${userName},</p>
+              <p>You've been removed from a test session by <strong>${unassignedByName}</strong>.</p>
+
+              <div class="info-box">
+                <h3 style="margin-top: 0; color: #6B7280;">${sessionName}</h3>
+                <p style="color: #666;">Organization: <strong>${organizationName}</strong></p>
+                ${
+                  reason
+                    ? `<p style="color: #666; margin-top: 15px;"><strong>Reason:</strong><br>${reason}</p>`
+                    : ""
+                }
+              </div>
+
+              <p>You no longer have access to this test session and are not required to complete any pending test cases for it.</p>
+
+              <p>If you believe this was done in error or have any questions, please contact ${unassignedByName} or your team lead.</p>
+
+              <p>Best regards,<br>Test Session Platform Team</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail(
+      email,
+      `Removed from test session: ${sessionName}`,
+      html
+    );
+  }
 }
 
 module.exports = new EmailService();

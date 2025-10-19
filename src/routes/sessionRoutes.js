@@ -8,6 +8,7 @@ const {
   updateSessionSchema,
 } = require("../validators/sessionValidator");
 
+// Organization-scoped routes (mounted at /orgs)
 router.post(
   "/:orgId/sessions",
   authenticate,
@@ -19,19 +20,21 @@ router.get(
   authenticate,
   sessionController.getOrganizationSessions
 );
+
+// Direct session routes (mounted at /sessions)
 router.get(
-  "/sessions/:sessionId",
+  "/:sessionId",
   authenticate,
   sessionController.getSessionById
 );
 router.put(
-  "/sessions/:sessionId",
+  "/:sessionId",
   authenticate,
   validate(updateSessionSchema),
   sessionController.updateSession
 );
 router.delete(
-  "/sessions/:sessionId",
+  "/:sessionId",
   authenticate,
   sessionController.deleteSession
 );

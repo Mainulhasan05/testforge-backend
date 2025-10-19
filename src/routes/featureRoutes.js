@@ -8,6 +8,7 @@ const {
   updateFeatureSchema,
 } = require("../validators/featureValidator");
 
+// Session-scoped routes (mounted at /sessions)
 router.post(
   "/:sessionId/features",
   authenticate,
@@ -19,19 +20,21 @@ router.get(
   authenticate,
   featureController.getSessionFeatures
 );
+
+// Direct feature routes (mounted at /features)
 router.get(
-  "/features/:featureId",
+  "/:featureId",
   authenticate,
   featureController.getFeatureById
 );
 router.put(
-  "/features/:featureId",
+  "/:featureId",
   authenticate,
   validate(updateFeatureSchema),
   featureController.updateFeature
 );
 router.delete(
-  "/features/:featureId",
+  "/:featureId",
   authenticate,
   featureController.deleteFeature
 );

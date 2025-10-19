@@ -2,7 +2,12 @@ const Session = require("../models/Session");
 const User = require("../models/User");
 const Feature = require("../models/Feature");
 const Case = require("../models/Case");
+const Feedback = require("../models/Feedback");
+const TesterProgress = require("../models/TesterProgress");
+const ChangeLog = require("../models/ChangeLog");
+const Organization = require("../models/Organization");
 const changeLogService = require("./changeLogService");
+const emailService = require("../utils/emailService");
 
 class SessionService {
   async createSession(orgId, userId, sessionData) {
@@ -160,6 +165,7 @@ class SessionService {
       throw new Error("Only owners can delete sessions");
     }
 
+    // Log session deletion before cascade delete
     await changeLogService.createLog(
       "Session",
       session._id,
@@ -169,7 +175,49 @@ class SessionService {
       null
     );
 
+    // CASCADE DELETE: Delete all related entities
+
+    // 1. Get all features in this session
+    const features = await Feature.find({ sessionId });
+    const featureIds = features.map((f) => f._id);
+
+    // 2. Get all cases in these features
+    const cases = await Case.find({ featureId: { $in: featureIds } });
+    const caseIds = cases.map((c) => c._id);
+
+    // 3. Delete all feedback for these cases
+    if (caseIds.length > 0) {
+      await Feedback.deleteMany({ caseId: { $in: caseIds } });
+      console.log(`Deleted feedback for ${caseIds.length} cases`);
+    }
+
+    // 4. Delete all cases in these features
+    if (featureIds.length > 0) {
+      await Case.deleteMany({ featureId: { $in: featureIds } });
+      console.log(`Deleted ${cases.length} cases`);
+    }
+
+    // 5. Delete all features in this session
+    await Feature.deleteMany({ sessionId });
+    console.log(`Deleted ${features.length} features`);
+
+    // 6. Delete all tester progress for this session
+    await TesterProgress.deleteMany({ sessionId });
+    console.log(`Deleted tester progress for session ${sessionId}`);
+
+    // 7. Delete all changelog entries for this session and related entities
+    await ChangeLog.deleteMany({
+      $or: [
+        { entityType: "Session", entityId: sessionId },
+        { entityType: "Feature", entityId: { $in: featureIds } },
+        { entityType: "Case", entityId: { $in: caseIds } },
+      ],
+    });
+    console.log(`Deleted changelog entries for session and related entities`);
+
+    // 8. Finally, delete the session itself
     await Session.findByIdAndDelete(sessionId);
+    console.log(`Deleted session ${sessionId}`);
 
     return session;
   }
@@ -307,6 +355,35 @@ class SessionService {
       session.toObject()
     );
 
+    // Get organization details for email
+    const organization = await Organization.findById(session.orgId);
+
+    // Get statistics for the email
+    const features = await Feature.find({ sessionId });
+    const featureIds = features.map((f) => f._id);
+    const cases = await Case.find({ featureId: { $in: featureIds } });
+
+    // Send assignment email notification
+    try {
+      await emailService.sendSessionAssignmentEmail(
+        userToAssign.email,
+        userToAssign.fullName,
+        session.title,
+        session.description,
+        organization.name,
+        assigningUser.fullName,
+        session._id.toString(),
+        session.startDate,
+        session.endDate,
+        features.length,
+        cases.length
+      );
+      console.log(`✓ Assignment email sent to ${userToAssign.email}`);
+    } catch (emailError) {
+      console.error("✗ Failed to send assignment email:", emailError.message);
+      // Don't throw error - assignment should succeed even if email fails
+    }
+
     // Return populated session
     return await Session.findById(sessionId)
       .populate("createdBy", "fullName email")
@@ -330,6 +407,15 @@ class SessionService {
       throw new Error("Only owners and admins can unassign users from sessions");
     }
 
+    // Get user being unassigned for email
+    const userToUnassign = await User.findById(userId);
+    if (!userToUnassign) {
+      throw new Error("User to unassign not found");
+    }
+
+    // Get organization details for email
+    const organization = await Organization.findById(session.orgId);
+
     const before = session.toObject();
 
     // Remove user from assignees
@@ -346,6 +432,21 @@ class SessionService {
       before,
       session.toObject()
     );
+
+    // Send unassignment email notification
+    try {
+      await emailService.sendSessionUnassignmentEmail(
+        userToUnassign.email,
+        userToUnassign.fullName,
+        session.title,
+        organization.name,
+        unassigningUser.fullName
+      );
+      console.log(`✓ Unassignment email sent to ${userToUnassign.email}`);
+    } catch (emailError) {
+      console.error("✗ Failed to send unassignment email:", emailError.message);
+      // Don't throw error - unassignment should succeed even if email fails
+    }
 
     // Return populated session
     return await Session.findById(sessionId)

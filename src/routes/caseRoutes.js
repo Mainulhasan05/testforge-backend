@@ -9,6 +9,7 @@ const {
   bulkCreateCasesSchema,
 } = require("../validators/caseValidator");
 
+// Feature-scoped routes (mounted at /features)
 router.post(
   "/:featureId/cases/bulk",
   authenticate,
@@ -22,13 +23,15 @@ router.post(
   caseController.createCase
 );
 router.get("/:featureId/cases", authenticate, caseController.getFeatureCases);
-router.get("/cases/:caseId", authenticate, caseController.getCaseById);
+
+// Direct case routes (mounted at /cases)
+router.get("/:caseId", authenticate, caseController.getCaseById);
 router.put(
-  "/cases/:caseId",
+  "/:caseId",
   authenticate,
   validate(updateCaseSchema),
   caseController.updateCase
 );
-router.delete("/cases/:caseId", authenticate, caseController.deleteCase);
+router.delete("/:caseId", authenticate, caseController.deleteCase);
 
 module.exports = router;
