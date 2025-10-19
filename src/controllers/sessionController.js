@@ -1,4 +1,5 @@
 const sessionService = require("../services/sessionService");
+const sessionDashboardService = require("../services/sessionDashboardService");
 const { sendSuccess, sendError } = require("../utils/response");
 const {
   getPaginationParams,
@@ -181,6 +182,54 @@ class SessionController {
         return sendError(res, error.message, "NOT_FOUND", {}, 404);
       }
       if (error.message.includes("permission") || error.message.includes("Only")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
+
+  async getDashboard(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+      const dashboardData = await sessionDashboardService.getFeatureStatistics(
+        sessionId,
+        req.user._id
+      );
+      sendSuccess(res, dashboardData, "Dashboard data retrieved successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("Access denied")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
+
+  async getProgress(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+      const progress = await sessionDashboardService.getTesterProgress(
+        sessionId,
+        req.user._id
+      );
+      sendSuccess(res, progress, "Progress retrieved successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAllProgress(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+      const allProgress = await sessionDashboardService.getAllTestersProgress(
+        sessionId,
+        req.user._id
+      );
+      sendSuccess(res, allProgress, "All progress retrieved successfully");
+    } catch (error) {
+      if (error.message.includes("Only owners")) {
         return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
       }
       next(error);

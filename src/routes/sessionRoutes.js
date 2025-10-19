@@ -23,6 +23,21 @@ router.get(
 
 // Direct session routes (mounted at /sessions)
 router.get(
+  "/:sessionId/dashboard",
+  authenticate,
+  sessionController.getDashboard
+);
+router.get(
+  "/:sessionId/progress",
+  authenticate,
+  sessionController.getProgress
+);
+router.get(
+  "/:sessionId/progress/all",
+  authenticate,
+  sessionController.getAllProgress
+);
+router.get(
   "/:sessionId",
   authenticate,
   sessionController.getSessionById

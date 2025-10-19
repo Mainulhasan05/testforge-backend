@@ -1,6 +1,7 @@
 const Feature = require("../models/Feature");
 const Session = require("../models/Session");
 const User = require("../models/User");
+const Case = require("../models/Case");
 const changeLogService = require("./changeLogService");
 
 class FeatureService {
@@ -77,7 +78,18 @@ class FeatureService {
       Feature.countDocuments(query),
     ]);
 
-    return { features, total };
+    // Add case count to each feature
+    const featuresWithCaseCount = await Promise.all(
+      features.map(async (feature) => {
+        const caseCount = await Case.countDocuments({ featureId: feature._id });
+        return {
+          ...feature.toObject(),
+          caseCount,
+        };
+      })
+    );
+
+    return { features: featuresWithCaseCount, total };
   }
 
   async getFeatureById(featureId, userId) {
