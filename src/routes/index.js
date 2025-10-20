@@ -15,6 +15,7 @@ const sessionDashboardRoutes = require("./sessionDashboardRoutes");
 const aiRoutes = require("./aiRoutes");
 const imageRoutes = require("./imageRoutes");
 const billingRoutes = require("./billingRoutes");
+const testResultsRoutes = require("./testResultsRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -34,5 +35,6 @@ router.use("/statistics", statisticsRoutes);
 router.use("/ai", aiRoutes); // AI test case generation routes
 router.use("/images", imageRoutes); // Image upload routes
 router.use("/billing", billingRoutes); // Billing and pricing routes
+router.use("/sessions", testResultsRoutes); // Test results routes: /sessions/:sessionId/results
 
 module.exports = router;
