@@ -22,11 +22,7 @@ router.get(
 );
 
 // Direct session routes (mounted at /sessions)
-router.get(
-  "/:sessionId/dashboard",
-  authenticate,
-  sessionController.getDashboard
-);
+// Note: Dashboard routes are handled by sessionDashboardRoutes.js
 router.get(
   "/:sessionId/progress",
   authenticate,

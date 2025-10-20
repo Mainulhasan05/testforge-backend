@@ -13,6 +13,8 @@ const invitationRoutes = require("./invitationRoutes");
 const statisticsRoutes = require("./statisticsRoutes");
 const sessionDashboardRoutes = require("./sessionDashboardRoutes");
 const aiRoutes = require("./aiRoutes");
+const imageRoutes = require("./imageRoutes");
+const billingRoutes = require("./billingRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -30,5 +32,7 @@ router.use("/changelog", changeLogRoutes);
 router.use("/invitations", invitationRoutes);
 router.use("/statistics", statisticsRoutes);
 router.use("/ai", aiRoutes); // AI test case generation routes
+router.use("/images", imageRoutes); // Image upload routes
+router.use("/billing", billingRoutes); // Billing and pricing routes
 
 module.exports = router;
