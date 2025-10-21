@@ -16,6 +16,8 @@ const aiRoutes = require("./aiRoutes");
 const imageRoutes = require("./imageRoutes");
 const billingRoutes = require("./billingRoutes");
 const testResultsRoutes = require("./testResultsRoutes");
+const issueRoutes = require("./issueRoutes");
+const jiraRoutes = require("./jiraRoutes");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -36,5 +38,8 @@ router.use("/ai", aiRoutes); // AI test case generation routes
 router.use("/images", imageRoutes); // Image upload routes
 router.use("/billing", billingRoutes); // Billing and pricing routes
 router.use("/sessions", testResultsRoutes); // Test results routes: /sessions/:sessionId/results
+router.use("/orgs", issueRoutes); // Organization-scoped: /orgs/:orgId/issues
+router.use("/issues", issueRoutes); // Direct issue routes: /issues/:issueId
+router.use("/jira", jiraRoutes); // Jira integration routes
 
 module.exports = router;

@@ -4,7 +4,7 @@ const changeLogSchema = new mongoose.Schema(
   {
     entityType: {
       type: String,
-      enum: ["Session", "Feature", "Case", "Feedback"],
+      enum: ["Session", "Feature", "Case", "Feedback", "Issue"],
       required: true,
     },
     entityId: {
@@ -13,7 +13,20 @@ const changeLogSchema = new mongoose.Schema(
     },
     action: {
       type: String,
-      enum: ["create", "update", "delete", "feedback"],
+      enum: [
+        "create",
+        "update",
+        "delete",
+        "feedback",
+        "status_change",
+        "assign",
+        "comment_added",
+        "comment_updated",
+        "comment_deleted",
+        "jira_ticket_created",
+        "jira_synced",
+        "jira_unlinked"
+      ],
       required: true,
     },
     performedBy: {

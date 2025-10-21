@@ -436,6 +436,175 @@ class EmailService {
       html
     );
   }
+
+  async sendIssuesNotificationEmail(
+    recipientEmail,
+    recipientName,
+    orgName,
+    issues,
+    customMessage,
+    orgId
+  ) {
+    const getPriorityColor = (priority) => {
+      const colors = {
+        low: "#10b981",
+        medium: "#f59e0b",
+        high: "#ef4444",
+        critical: "#dc2626",
+      };
+      return colors[priority] || "#6b7280";
+    };
+
+    const getPriorityBadge = (priority) => {
+      const color = getPriorityColor(priority);
+      return `<span style="background: ${color}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase;">${priority}</span>`;
+    };
+
+    const getStatusBadge = (status) => {
+      return `<span style="background: #f0f0f0; color: #333; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500;">${status.replace(
+        "_",
+        " "
+      )}</span>`;
+    };
+
+    const issuesHtml = issues
+      .map((issue) => {
+        const firstImage =
+          issue.images && issue.images.length > 0
+            ? issue.images[0].imageId?.publicUrl
+            : null;
+
+        return `
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 20px;">
+            ${
+              firstImage
+                ? `<img src="${firstImage}" alt="Issue screenshot" style="max-width: 150px; max-height: 100px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`
+                : '<div style="width: 150px; height: 100px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9ca3af;">📋 No Image</div>'
+            }
+          </td>
+          <td style="padding: 20px;">
+            <strong style="font-size: 16px; color: #111; display: block; margin-bottom: 8px;">${
+              issue.title
+            }</strong>
+            <p style="color: #666; font-size: 14px; margin: 8px 0; line-height: 1.5;">
+              ${
+                issue.description.length > 120
+                  ? issue.description.substring(0, 120) + "..."
+                  : issue.description
+              }
+            </p>
+            <div style="margin: 12px 0;">
+              ${getPriorityBadge(issue.priority)}
+              ${getStatusBadge(issue.status)}
+              <span style="background: #eff6ff; color: #2563eb; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-left: 4px;">${
+                issue.category
+              }</span>
+            </div>
+            <div style="margin-top: 12px;">
+              <span style="color: #666; font-size: 13px;">
+                👍 ${issue.votes?.length || 0} votes ·
+                💬 ${issue.comments?.length || 0} comments ·
+                👁 ${issue.watchers?.length || 0} watchers
+              </span>
+            </div>
+            <a href="${
+              config.frontendUrl
+            }/orgs/${orgId}/issues/${issue._id}"
+               style="display: inline-block; margin-top: 12px; color: #2563eb; text-decoration: none; font-weight: 600; font-size: 14px;">
+              View Issue →
+            </a>
+          </td>
+        </tr>
+      `;
+      })
+      .join("");
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px;">
+        <div style="max-width: 650px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 40px 30px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 10px;">🚨</div>
+            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">Issue Alert</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">${orgName}</p>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 40px 30px;">
+            <p style="font-size: 16px; color: #111; margin: 0 0 10px 0;">
+              Hi <strong>${recipientName}</strong>,
+            </p>
+
+            <p style="font-size: 15px; color: #666; margin: 0 0 25px 0;">
+              ${
+                issues.length === 1
+                  ? "A critical issue has been reported"
+                  : `${issues.length} issues have been reported`
+              } that require your attention.
+            </p>
+
+            ${
+              customMessage
+                ? `
+              <div style="background: #eff6ff; border-left: 4px solid #2563eb; padding: 16px 20px; margin-bottom: 30px; border-radius: 4px;">
+                <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+                  <strong>Message from team:</strong><br>
+                  ${customMessage}
+                </p>
+              </div>
+            `
+                : ""
+            }
+
+            <!-- Issues Table -->
+            <table style="width: 100%; border-collapse: collapse; margin: 25px 0; background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
+              ${issuesHtml}
+            </table>
+
+            <!-- View All Button -->
+            <div style="text-align: center; margin: 35px 0 25px 0;">
+              <a href="${
+                config.frontendUrl
+              }/orgs/${orgId}/issues"
+                 style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);">
+                View All Issues (${issues.length})
+              </a>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="background: #f9fafb; padding: 24px 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; color: #6b7280;">
+              This is an automated notification from TestForge Issue Tracker
+            </p>
+            <p style="margin: 0; font-size: 12px; color: #6b7280;">
+              <a href="${
+                config.frontendUrl
+              }/orgs/${orgId}/settings/notifications" style="color: #2563eb; text-decoration: none;">
+                Manage notification preferences
+              </a>
+            </p>
+          </div>
+
+        </div>
+      </body>
+      </html>
+    `;
+
+    const subject = `[TestForge] ${
+      issues.length
+    } Issue${issues.length > 1 ? "s" : ""} Require Attention - ${orgName}`;
+
+    return this.sendEmail(recipientEmail, subject, html);
+  }
 }
 
 module.exports = new EmailService();
