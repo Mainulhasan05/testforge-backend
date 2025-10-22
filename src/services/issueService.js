@@ -125,8 +125,13 @@ class IssueService {
    * Get issue statistics
    */
   async getIssueStats(orgId) {
+    const mongoose = require('mongoose');
+    const orgObjectId = mongoose.Types.ObjectId.isValid(orgId)
+      ? new mongoose.Types.ObjectId(orgId)
+      : orgId;
+
     const stats = await Issue.aggregate([
-      { $match: { orgId: orgId } },
+      { $match: { orgId: orgObjectId } },
       {
         $group: {
           _id: null,

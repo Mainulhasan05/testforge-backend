@@ -476,44 +476,45 @@ class EmailService {
 
         return `
         <tr style="border-bottom: 1px solid #e5e7eb;">
-          <td style="padding: 20px;">
-            ${
-              firstImage
-                ? `<img src="${firstImage}" alt="Issue screenshot" style="max-width: 150px; max-height: 100px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">`
-                : '<div style="width: 150px; height: 100px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9ca3af;">📋 No Image</div>'
-            }
-          </td>
-          <td style="padding: 20px;">
-            <strong style="font-size: 16px; color: #111; display: block; margin-bottom: 8px;">${
-              issue.title
-            }</strong>
-            <p style="color: #666; font-size: 14px; margin: 8px 0; line-height: 1.5;">
-              ${
-                issue.description.length > 120
-                  ? issue.description.substring(0, 120) + "..."
-                  : issue.description
-              }
-            </p>
-            <div style="margin: 12px 0;">
-              ${getPriorityBadge(issue.priority)}
-              ${getStatusBadge(issue.status)}
-              <span style="background: #eff6ff; color: #2563eb; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-left: 4px;">${
-                issue.category
-              }</span>
-            </div>
-            <div style="margin-top: 12px;">
-              <span style="color: #666; font-size: 13px;">
-                👍 ${issue.votes?.length || 0} votes ·
-                💬 ${issue.comments?.length || 0} comments ·
-                👁 ${issue.watchers?.length || 0} watchers
-              </span>
-            </div>
-            <a href="${
-              config.frontendUrl
-            }/orgs/${orgId}/issues/${issue._id}"
-               style="display: inline-block; margin-top: 12px; color: #2563eb; text-decoration: none; font-weight: 600; font-size: 14px;">
-              View Issue →
-            </a>
+          <td colspan="2" style="padding: 20px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <!-- Image Column -->
+                <td style="width: 120px; vertical-align: top; padding-right: 15px;">
+                  ${
+                    firstImage
+                      ? `<img src="${firstImage}" alt="Issue screenshot" style="width: 100%; max-width: 120px; height: auto; max-height: 80px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: block;">`
+                      : '<div style="width: 100%; max-width: 120px; height: 80px; background: #f3f4f6; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 24px;">📋</div>'
+                  }
+                </td>
+                <!-- Content Column -->
+                <td style="vertical-align: top;">
+                  <strong style="font-size: 16px; color: #111; display: block; margin-bottom: 8px;">${
+                    issue.title
+                  }</strong>
+                  <p style="color: #666; font-size: 14px; margin: 8px 0; line-height: 1.5;">
+                    ${
+                      issue.description.length > 100
+                        ? issue.description.substring(0, 100) + "..."
+                        : issue.description
+                    }
+                  </p>
+                  <div style="margin: 12px 0;">
+                    ${getPriorityBadge(issue.priority)}
+                    ${getStatusBadge(issue.status)}
+                  </div>
+                  <div style="margin-top: 12px; font-size: 13px; color: #666;">
+                    👍 ${issue.votes?.length || 0} · 💬 ${issue.comments?.length || 0} · 👁 ${issue.watchers?.length || 0}
+                  </div>
+                  <a href="${
+                    config.frontendUrl
+                  }/orgs/${orgId}/issues/${issue._id}"
+                     style="display: inline-block; margin-top: 12px; color: #2563eb; text-decoration: none; font-weight: 600; font-size: 14px;">
+                    View Issue →
+                  </a>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
       `;
