@@ -125,6 +125,7 @@ class JiraService {
     if (!config.syncEnabled) {
       throw new Error('Jira sync is disabled');
     }
+    console.log("Creating Jira ticket for issue:", issueId);
 
     // Get issue with images
     const issue = await Issue.findById(issueId).populate({
@@ -164,6 +165,7 @@ class JiraService {
 
     // Decrypt API token
     const apiToken = config.decryptApiToken();
+    
 
     // Create Jira ticket
     let response;
@@ -185,6 +187,7 @@ class JiraService {
       config.connectionStatus = 'error';
       config.lastError = error.response?.data?.errorMessages?.[0] || error.message;
       await config.save();
+      console.log('Jira ticket creation error:', error.response?.data || error.message);
 
       throw new Error('Failed to create Jira ticket: ' + (error.response?.data?.errorMessages?.[0] || error.message));
     }

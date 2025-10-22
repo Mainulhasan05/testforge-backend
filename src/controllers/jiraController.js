@@ -79,6 +79,7 @@ class JiraController {
       const { issueId } = req.params;
       const userId = req.user._id;
       const { ticketData, orgId } = req.body;
+      console.log("Received request to create Jira ticket for issue:", issueId, "with data:", ticketData);
 
       const result = await jiraService.createTicket(orgId, issueId, ticketData, userId);
 
