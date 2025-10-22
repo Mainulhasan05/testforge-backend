@@ -9,14 +9,23 @@ class JiraService {
    * Create or update Jira configuration
    */
   async saveConfig(orgId, userId, configData) {
-    let config = await JiraConfig.findOne({ orgId });
+    let config = await JiraConfig.findOne({ userId, orgId });
 
     if (config) {
       // Update existing config
-      Object.assign(config, configData);
+      // If jiraApiToken is not provided, don't update it (keep existing)
+      const updateData = { ...configData };
+      if (!updateData.jiraApiToken) {
+        delete updateData.jiraApiToken;
+      }
+      Object.assign(config, updateData);
     } else {
-      // Create new config
+      // Create new config - API token is required
+      if (!configData.jiraApiToken) {
+        throw new Error('Jira API token is required for new configuration');
+      }
       config = new JiraConfig({
+        userId,
         orgId,
         ...configData
       });
@@ -30,16 +39,16 @@ class JiraService {
   /**
    * Get Jira configuration
    */
-  async getConfig(orgId) {
-    const config = await JiraConfig.findOne({ orgId });
+  async getConfig(orgId, userId) {
+    const config = await JiraConfig.findOne({ userId, orgId });
     return config ? config.toSafeObject() : null;
   }
 
   /**
    * Delete Jira configuration
    */
-  async deleteConfig(orgId) {
-    await JiraConfig.findOneAndDelete({ orgId });
+  async deleteConfig(orgId, userId) {
+    await JiraConfig.findOneAndDelete({ userId, orgId });
     return true;
   }
 
@@ -48,14 +57,21 @@ class JiraService {
    */
   async testConnection(configData) {
     try {
+      // Clean the Jira URL (remove trailing slash)
+      const jiraUrl = configData.jiraUrl.replace(/\/$/, '');
+
       const response = await axios.get(
-        `${configData.jiraUrl}/rest/api/3/myself`,
+        `${jiraUrl}/rest/api/3/myself`,
         {
           auth: {
             username: configData.jiraEmail,
             password: configData.jiraApiToken
           },
-          timeout: 10000
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
         }
       );
 
@@ -66,9 +82,31 @@ class JiraService {
         email: response.data.emailAddress
       };
     } catch (error) {
+      let errorMessage = 'Connection failed';
+
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        if (error.response.status === 401) {
+          errorMessage = 'Authentication failed. Please check your email and API token. Make sure you\'re using a valid Jira API token (not your password).';
+        } else if (error.response.status === 403) {
+          errorMessage = 'Access forbidden. Your API token may not have the required permissions.';
+        } else if (error.response.status === 404) {
+          errorMessage = 'Jira instance not found. Please verify your Jira URL is correct (e.g., https://your-domain.atlassian.net).';
+        } else {
+          errorMessage = error.response.data?.message || `Request failed with status ${error.response.status}`;
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'No response from Jira. Please check your Jira URL and network connection.';
+      } else {
+        // Something happened in setting up the request
+        errorMessage = error.message;
+      }
+
       return {
         success: false,
-        message: error.response?.data?.message || error.message,
+        message: errorMessage,
+        statusCode: error.response?.status,
         error: error.response?.data
       };
     }
@@ -78,10 +116,10 @@ class JiraService {
    * Create Jira ticket from issue
    */
   async createTicket(orgId, issueId, ticketData, userId) {
-    // Get Jira config
-    const config = await JiraConfig.findOne({ orgId });
+    // Get Jira config for this user
+    const config = await JiraConfig.findOne({ userId, orgId });
     if (!config) {
-      throw new Error('Jira not configured for this organization');
+      throw new Error('Jira not configured for your account. Please configure Jira in organization settings.');
     }
 
     if (!config.syncEnabled) {

@@ -24,8 +24,9 @@ class JiraController {
   async getConfig(req, res, next) {
     try {
       const { orgId } = req.params;
+      const userId = req.user._id;
 
-      const config = await jiraService.getConfig(orgId);
+      const config = await jiraService.getConfig(orgId, userId);
 
       if (!config) {
         return sendSuccess(res, null, 'No Jira configuration found', null, 200);
@@ -43,8 +44,9 @@ class JiraController {
   async deleteConfig(req, res, next) {
     try {
       const { orgId } = req.params;
+      const userId = req.user._id;
 
-      await jiraService.deleteConfig(orgId);
+      await jiraService.deleteConfig(orgId, userId);
 
       return sendSuccess(res, null, 'Jira configuration deleted successfully', null, 200);
     } catch (error) {

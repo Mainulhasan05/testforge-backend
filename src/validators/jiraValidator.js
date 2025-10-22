@@ -3,7 +3,7 @@ const Joi = require('joi');
 const saveJiraConfigSchema = Joi.object({
   jiraUrl: Joi.string().uri().required().trim(),
   jiraEmail: Joi.string().email().required().trim(),
-  jiraApiToken: Joi.string().required().trim(),
+  jiraApiToken: Joi.string().optional().trim().min(1), // Optional for updates, but if provided must not be empty
   jiraProjectKey: Joi.string().required().trim().uppercase(),
   issueMappings: Joi.object({
     priority: Joi.object({
@@ -23,7 +23,8 @@ const saveJiraConfigSchema = Joi.object({
 const testConnectionSchema = Joi.object({
   jiraUrl: Joi.string().uri().required().trim(),
   jiraEmail: Joi.string().email().required().trim(),
-  jiraApiToken: Joi.string().required().trim()
+  jiraApiToken: Joi.string().required().trim(),
+  jiraProjectKey: Joi.string().optional().trim().uppercase()
 });
 
 const createJiraTicketSchema = Joi.object({
