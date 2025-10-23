@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^1.26.0",
     "bcryptjs": "^3.0.2",
     "bytez.js": "^1.1.16",
     "cloudinary": "^2.7.0",
