@@ -62,9 +62,11 @@ class OrganizationService {
       const userOrg = user.organizations.find(
         (o) => o.orgId.toString() === org._id.toString()
       );
+      const orgObj = org.toObject();
       return {
-        ...org.toObject(),
+        ...orgObj,
         userRole: userOrg?.role,
+        membersCount: orgObj.members?.length || 0,
       };
     });
 
