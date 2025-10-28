@@ -28,8 +28,8 @@ class IssueAIService {
     // Build AI prompt
     const prompt = this.buildJiraPrompt(context);
 
-    // Call AI service
-    const aiResponse = await aiService.generateWithBytezKei(prompt, {
+    // Call AI service with Gemini
+    const aiResponse = await aiService.generateWithGemini(prompt, {
       temperature: 0.7,
       maxTokens: 1500
     });
@@ -232,7 +232,7 @@ Return ONLY valid JSON:
   "reasoning": "brief explanation (1-2 sentences)"
 }`;
 
-    const response = await aiService.generateWithBytezKei(prompt, {
+    const response = await aiService.generateWithGemini(prompt, {
       temperature: 0.3,
       maxTokens: 200
     });
@@ -251,7 +251,7 @@ Category: ${category}
 
 Return ONLY a single line title, no JSON, no explanation.`;
 
-    const response = await aiService.generateWithBytezKei(prompt, {
+    const response = await aiService.generateWithGemini(prompt, {
       temperature: 0.5,
       maxTokens: 50
     });

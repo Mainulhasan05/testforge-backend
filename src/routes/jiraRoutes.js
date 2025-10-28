@@ -54,6 +54,25 @@ router.post(
   jiraController.getIssueTypes
 );
 
+// Get Jira users
+router.post(
+  '/assignable-users',
+  validate(testConnectionSchema),
+  jiraController.getAssignableUsers
+);
+
+router.post(
+  '/search-users',
+  validate(testConnectionSchema),
+  jiraController.searchUsers
+);
+
+router.post(
+  '/project-members',
+  validate(testConnectionSchema),
+  jiraController.getProjectMembers
+);
+
 // Issue-specific Jira routes: /api/jira/issues/:issueId
 router.post(
   '/issues/:issueId/create',

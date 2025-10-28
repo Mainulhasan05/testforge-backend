@@ -116,16 +116,28 @@ class JiraService {
    * Create Jira ticket from issue
    */
   async createTicket(orgId, issueId, ticketData, userId) {
-    // Get Jira config for this user
-    const config = await JiraConfig.findOne({ userId, orgId });
+    // Get Jira config for this organization (any user's config will work)
+    let config = await JiraConfig.findOne({ orgId });
+
     if (!config) {
-      throw new Error('Jira not configured for your account. Please configure Jira in organization settings.');
+      // Try to find by userId as fallback
+      config = await JiraConfig.findOne({ userId, orgId });
+    }
+
+    if (!config) {
+      throw new Error('Jira not configured for this organization. Please configure Jira in organization settings.');
     }
 
     if (!config.syncEnabled) {
       throw new Error('Jira sync is disabled');
     }
+
     console.log("Creating Jira ticket for issue:", issueId);
+    console.log("Using Jira config:", {
+      url: config.jiraUrl,
+      email: config.jiraEmail,
+      project: config.jiraProjectKey
+    });
 
     // Get issue with images
     const issue = await Issue.findById(issueId).populate({
@@ -163,22 +175,38 @@ class JiraService {
       jiraPayload.fields.versions = ticketData.affectsVersions.map(v => ({ name: v }));
     }
 
+    // Add assignee if provided
+    if (ticketData.assignee) {
+      jiraPayload.fields.assignee = { id: ticketData.assignee };
+      console.log("Assigning ticket to:", ticketData.assignee);
+    }
+
     // Decrypt API token
     const apiToken = config.decryptApiToken();
     
+
+    // Ensure Jira URL is properly formatted
+    const jiraUrl = config.jiraUrl.replace(/\/$/, '');
+
+    console.log("Sending request to Jira...");
+    console.log("URL:", `${jiraUrl}/rest/api/3/issue`);
+    console.log("Payload:", JSON.stringify(jiraPayload, null, 2));
 
     // Create Jira ticket
     let response;
     try {
       response = await axios.post(
-        `${config.jiraUrl}/rest/api/3/issue`,
+        `${jiraUrl}/rest/api/3/issue`,
         jiraPayload,
         {
           auth: {
             username: config.jiraEmail,
             password: apiToken
           },
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
           timeout: 30000
         }
       );
@@ -187,9 +215,17 @@ class JiraService {
       config.connectionStatus = 'error';
       config.lastError = error.response?.data?.errorMessages?.[0] || error.message;
       await config.save();
-      console.log('Jira ticket creation error:', error.response?.data || error.message);
 
-      throw new Error('Failed to create Jira ticket: ' + (error.response?.data?.errorMessages?.[0] || error.message));
+      console.error('Jira ticket creation error:');
+      console.error('Status:', error.response?.status);
+      console.error('Data:', JSON.stringify(error.response?.data, null, 2));
+      console.error('Message:', error.message);
+
+      const errorMsg = error.response?.data?.errorMessages?.[0] ||
+                       error.response?.data?.errors?.summary ||
+                       error.message;
+
+      throw new Error('Failed to create Jira ticket: ' + errorMsg);
     }
 
     const ticketKey = response.data.key;
@@ -217,15 +253,17 @@ class JiraService {
     config.lastError = undefined;
     await config.save();
 
-    // Log in changelog
-    await changeLogService.createLog(
-      'Issue',
-      issueId,
-      'jira_ticket_created',
-      userId,
-      null,
-      { ticketKey, ticketUrl }
-    );
+    // Log in changelog (only if userId provided)
+    if (userId) {
+      await changeLogService.createLog(
+        'Issue',
+        issueId,
+        'jira_ticket_created',
+        userId,
+        null,
+        { ticketKey, ticketUrl }
+      );
+    }
 
     return { ticketKey, ticketUrl };
   }
@@ -409,33 +447,72 @@ class JiraService {
   }
 
   /**
-   * Convert markdown to Jira format
+   * Convert markdown to Jira Atlassian Document Format (ADF)
    */
   convertToJiraMarkdown(markdown) {
-    if (!markdown) return '';
+    if (!markdown) return {
+      type: "doc",
+      version: 1,
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "No description provided"
+            }
+          ]
+        }
+      ]
+    };
 
-    // Convert markdown to Jira markup
-    let jiraMarkup = markdown
-      // Headers
-      .replace(/^### (.+)$/gm, 'h3. $1')
-      .replace(/^## (.+)$/gm, 'h2. $1')
-      .replace(/^# (.+)$/gm, 'h1. $1')
-      // Bold - but preserve ** inside words
-      .replace(/\*\*([^*]+)\*\*/g, '*$1*')
-      // Italic
-      .replace(/\*([^*]+)\*/g, '_$1_')
-      // Code blocks
-      .replace(/```(\w+)?\n([\s\S]+?)```/g, '{code:$1}\n$2{code}')
-      // Inline code
-      .replace(/`([^`]+)`/g, '{{$1}}')
-      // Lists
-      .replace(/^\* /gm, '* ')
-      .replace(/^- /gm, '* ')
-      .replace(/^\d+\. /gm, '# ')
-      // Links
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '[$1|$2]');
+    // Split into paragraphs and convert to ADF
+    const paragraphs = markdown.split('\n\n').filter(p => p.trim());
 
-    return jiraMarkup;
+    const content = paragraphs.map(para => {
+      // Check if it's a header
+      if (para.startsWith('# ')) {
+        return {
+          type: "heading",
+          attrs: { level: 1 },
+          content: [{ type: "text", text: para.replace(/^# /, '') }]
+        };
+      } else if (para.startsWith('## ')) {
+        return {
+          type: "heading",
+          attrs: { level: 2 },
+          content: [{ type: "text", text: para.replace(/^## /, '') }]
+        };
+      } else if (para.startsWith('### ')) {
+        return {
+          type: "heading",
+          attrs: { level: 3 },
+          content: [{ type: "text", text: para.replace(/^### /, '') }]
+        };
+      } else {
+        // Regular paragraph
+        return {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: para
+            }
+          ]
+        };
+      }
+    });
+
+    return {
+      type: "doc",
+      version: 1,
+      content: content.length > 0 ? content : [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: markdown }]
+        }
+      ]
+    };
   }
 
   /**
@@ -501,6 +578,102 @@ class JiraService {
       }));
     } catch (error) {
       throw new Error('Failed to fetch Jira issue types: ' + error.message);
+    }
+  }
+
+  /**
+   * Get assignable users for a project
+   */
+  async getAssignableUsers(configData) {
+    try {
+      const jiraUrl = configData.jiraUrl.replace(/\/$/, '');
+      const url = `${jiraUrl}/rest/api/3/user/assignable/search?project=${configData.jiraProjectKey}`;
+
+      const response = await axios.get(url, {
+        auth: {
+          username: configData.jiraEmail,
+          password: configData.jiraApiToken
+        },
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      return response.data.map(user => ({
+        accountId: user.accountId,
+        displayName: user.displayName,
+        emailAddress: user.emailAddress || null,
+        active: user.active !== false,
+        avatarUrls: user.avatarUrls
+      }));
+    } catch (error) {
+      console.error('Failed to fetch assignable users:', error.message);
+      throw new Error('Failed to fetch assignable users: ' + error.message);
+    }
+  }
+
+  /**
+   * Search for users by name or email
+   */
+  async searchUsers(configData, query) {
+    try {
+      const jiraUrl = configData.jiraUrl.replace(/\/$/, '');
+      const url = `${jiraUrl}/rest/api/3/user/search?query=${encodeURIComponent(query)}`;
+
+      const response = await axios.get(url, {
+        auth: {
+          username: configData.jiraEmail,
+          password: configData.jiraApiToken
+        },
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      return response.data.map(user => ({
+        accountId: user.accountId,
+        displayName: user.displayName,
+        emailAddress: user.emailAddress || null,
+        active: user.active !== false,
+        avatarUrls: user.avatarUrls
+      }));
+    } catch (error) {
+      console.error('Failed to search users:', error.message);
+      throw new Error('Failed to search users: ' + error.message);
+    }
+  }
+
+  /**
+   * Get project members
+   */
+  async getProjectMembers(configData) {
+    try {
+      const jiraUrl = configData.jiraUrl.replace(/\/$/, '');
+      const url = `${jiraUrl}/rest/api/3/user/assignable/multiProjectSearch?projectKeys=${configData.jiraProjectKey}`;
+
+      const response = await axios.get(url, {
+        auth: {
+          username: configData.jiraEmail,
+          password: configData.jiraApiToken
+        },
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      return response.data.map(user => ({
+        accountId: user.accountId,
+        displayName: user.displayName,
+        emailAddress: user.emailAddress || null,
+        active: user.active !== false,
+        avatarUrls: user.avatarUrls
+      }));
+    } catch (error) {
+      console.error('Failed to fetch project members:', error.message);
+      throw new Error('Failed to fetch project members: ' + error.message);
     }
   }
 }

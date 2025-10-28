@@ -145,6 +145,50 @@ class JiraController {
       next(error);
     }
   }
+
+  /**
+   * Get assignable users for a project
+   */
+  async getAssignableUsers(req, res, next) {
+    try {
+      const users = await jiraService.getAssignableUsers(req.body);
+
+      return sendSuccess(res, users, 'Assignable users retrieved successfully', null, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Search for users by name or email
+   */
+  async searchUsers(req, res, next) {
+    try {
+      const { query } = req.query;
+      if (!query) {
+        return sendError(res, 'Query parameter is required', 'INVALID_INPUT', {}, 400);
+      }
+
+      const users = await jiraService.searchUsers(req.body, query);
+
+      return sendSuccess(res, users, 'Users retrieved successfully', null, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Get project members
+   */
+  async getProjectMembers(req, res, next) {
+    try {
+      const members = await jiraService.getProjectMembers(req.body);
+
+      return sendSuccess(res, members, 'Project members retrieved successfully', null, 200);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new JiraController();

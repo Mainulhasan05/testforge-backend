@@ -7,3 +7,10 @@ coverage/
 .idea/
 dist/
 build/
+# Test scripts with sensitive data (use .env instead)
+test-jira-integration.js
+test-jira-only.js
+test-jira-api.js
+
+# Local test files
+*-local.js
