@@ -3,7 +3,7 @@ const Joi = require('joi');
 const saveJiraConfigSchema = Joi.object({
   jiraUrl: Joi.string().uri().required().trim(),
   jiraEmail: Joi.string().email().required().trim(),
-  jiraApiToken: Joi.string().optional().trim().min(1), // Optional for updates, but if provided must not be empty
+  jiraApiToken: Joi.string().optional().trim().allow(''), // Allow empty for updates (keeps existing token)
   jiraProjectKey: Joi.string().required().trim().uppercase(),
   issueMappings: Joi.object({
     priority: Joi.object({

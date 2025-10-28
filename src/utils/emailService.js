@@ -606,6 +606,126 @@ class EmailService {
 
     return this.sendEmail(recipientEmail, subject, html);
   }
+
+  async sendRoleChangeEmail(
+    email,
+    userName,
+    organizationName,
+    oldRole,
+    newRole,
+    changedByName
+  ) {
+    const getRoleBadge = (role) => {
+      const colors = {
+        owner: "#dc2626",
+        admin: "#2563eb",
+        member: "#10b981",
+      };
+      const color = colors[role] || "#6b7280";
+      return `<span style="background: ${color}; color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; text-transform: uppercase;">${role}</span>`;
+    };
+
+    const getRoleDescription = (role) => {
+      const descriptions = {
+        owner: "Full control over the organization, including billing and deletion",
+        admin: "Manage members, create sessions, and handle critical operations",
+        member: "Access sessions, create issues, and collaborate with the team",
+      };
+      return descriptions[role] || "Standard member access";
+    };
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background-color: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+            .role-change-box { background-color: white; padding: 25px; border-radius: 8px; margin: 25px 0; border: 2px solid #e5e7eb; text-align: center; }
+            .role-arrow { font-size: 24px; color: #9ca3af; margin: 15px 0; }
+            .role-item { margin: 15px 0; }
+            .role-label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+            .permissions-box { background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 20px; border-radius: 4px; margin: 20px 0; }
+            .permission-list { list-style: none; padding: 0; margin: 15px 0; }
+            .permission-list li { padding: 8px 0; color: #1e40af; }
+            .permission-list li:before { content: "✓"; color: #10b981; font-weight: bold; margin-right: 10px; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div style="font-size: 48px; margin-bottom: 10px;">👑</div>
+              <h1 style="margin: 0; font-size: 28px;">Role Updated</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">${organizationName}</p>
+            </div>
+            <div class="content">
+              <p>Hi ${userName},</p>
+              <p>Your role in <strong>${organizationName}</strong> has been updated by <strong>${changedByName}</strong>.</p>
+
+              <div class="role-change-box">
+                <div class="role-item">
+                  <div class="role-label">Previous Role</div>
+                  ${getRoleBadge(oldRole)}
+                </div>
+                <div class="role-arrow">↓</div>
+                <div class="role-item">
+                  <div class="role-label">New Role</div>
+                  ${getRoleBadge(newRole)}
+                </div>
+              </div>
+
+              <div class="permissions-box">
+                <h3 style="margin-top: 0; color: #1e40af;">Your New Permissions</h3>
+                <p style="color: #1e40af; margin: 5px 0;">${getRoleDescription(newRole)}</p>
+              </div>
+
+              ${
+                newRole === "admin"
+                  ? `
+                <p><strong>As an admin, you can now:</strong></p>
+                <ul class="permission-list">
+                  <li>Invite and manage organization members</li>
+                  <li>Promote other users to admin role</li>
+                  <li>Create and manage test sessions</li>
+                  <li>Create and manage Jira integrations</li>
+                  <li>Access all organization features and settings</li>
+                </ul>
+              `
+                  : newRole === "owner"
+                  ? `
+                <p><strong>As an owner, you have full control:</strong></p>
+                <ul class="permission-list">
+                  <li>All admin permissions</li>
+                  <li>Promote users to any role (including owner)</li>
+                  <li>Manage billing and subscriptions</li>
+                  <li>Delete the organization</li>
+                  <li>Transfer ownership</li>
+                </ul>
+              `
+                  : ""
+              }
+
+              <p>If you have any questions about your new role or permissions, please reach out to ${changedByName} or your team lead.</p>
+
+              <p>Best regards,<br>TestForge Team</p>
+            </div>
+            <div class="footer">
+              <p>This is an automated email. Please do not reply.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail(
+      email,
+      `Your role has been updated in ${organizationName}`,
+      html
+    );
+  }
 }
 
 module.exports = new EmailService();

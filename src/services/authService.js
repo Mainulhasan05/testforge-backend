@@ -70,12 +70,12 @@ class AuthService {
             role: invitation.role,
           };
 
-          // Send welcome email
-          await emailService.sendWelcomeEmail(
+          // Send welcome email (async, don't block response)
+          emailService.sendWelcomeEmail(
             user.email,
             user.fullName,
             organization.name
-          );
+          ).catch(err => console.error('Failed to send welcome email:', err));
         }
       } catch (error) {
         console.error("Error processing invitation during signup:", error);
@@ -187,7 +187,9 @@ class AuthService {
     user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
-    await emailService.sendPasswordResetEmail(email, resetToken, user.fullName);
+    // Send password reset email (async, don't block response)
+    emailService.sendPasswordResetEmail(email, resetToken, user.fullName)
+      .catch(err => console.error('Failed to send password reset email:', err));
 
     return { message: "Password reset email sent" };
   }

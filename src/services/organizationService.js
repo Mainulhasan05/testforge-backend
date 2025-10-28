@@ -1,6 +1,7 @@
 const Organization = require("../models/Organization");
 const User = require("../models/User");
 const { generateSlug, generateUniqueSlug } = require("../utils/slugify");
+const changeLogService = require("./changeLogService");
 
 class OrganizationService {
   async createOrganization(name, ownerId, description = "") {
@@ -23,6 +24,16 @@ class OrganizationService {
         },
       },
     });
+
+    // Create changelog entry
+    await changeLogService.createLog(
+      "Organization",
+      organization._id,
+      "created",
+      ownerId,
+      null,
+      organization.toObject()
+    );
 
     return organization;
   }
@@ -87,6 +98,8 @@ class OrganizationService {
       throw new Error("Only owners can update organization details");
     }
 
+    const before = organization.toObject();
+
     if (updateData.name) {
       organization.name = updateData.name;
 
@@ -100,6 +113,16 @@ class OrganizationService {
     }
 
     await organization.save();
+
+    // Create changelog entry
+    await changeLogService.createLog(
+      "Organization",
+      organization._id,
+      "updated",
+      userId,
+      before,
+      organization.toObject()
+    );
 
     return organization;
   }
@@ -153,6 +176,16 @@ class OrganizationService {
       });
     }
 
+    // Create changelog entry
+    await changeLogService.createLog(
+      "Organization",
+      organization._id,
+      "member_added",
+      addedBy,
+      null,
+      { userId, userName: newMember.fullName, role }
+    );
+
     return organization;
   }
 
@@ -167,8 +200,21 @@ class OrganizationService {
       (o) => o.orgId.toString() === orgId.toString()
     );
 
-    if (!userOrgRole || userOrgRole.role !== "owner") {
-      throw new Error("Only owners can update member roles");
+    // Permission check: owners can promote to any role, admins can only promote to admin/member
+    if (!userOrgRole) {
+      throw new Error("You are not a member of this organization");
+    }
+
+    const isOwner = userOrgRole.role === "owner";
+    const isAdmin = userOrgRole.role === "admin";
+
+    if (!isOwner && !isAdmin) {
+      throw new Error("Only owners and admins can update member roles");
+    }
+
+    // Admins can only promote to admin or member, not to owner
+    if (isAdmin && !isOwner && newRole === "owner") {
+      throw new Error("Only owners can promote users to owner role");
     }
 
     if (!organization.members.includes(userId)) {
@@ -185,6 +231,17 @@ class OrganizationService {
     }
 
     const oldRole = member.organizations[memberOrgIndex].role;
+
+    // Prevent demoting yourself
+    if (userId.toString() === updatedBy.toString() && oldRole !== newRole) {
+      throw new Error("You cannot change your own role");
+    }
+
+    // Only owners can demote other owners
+    if (oldRole === "owner" && !isOwner) {
+      throw new Error("Only owners can change an owner's role");
+    }
+
     member.organizations[memberOrgIndex].role = newRole;
     await member.save();
 
@@ -196,6 +253,29 @@ class OrganizationService {
         (o) => o.toString() !== userId.toString()
       );
       await organization.save();
+    }
+
+    // Send email notification if role actually changed (async, don't block response)
+    if (oldRole !== newRole) {
+      const emailService = require("../utils/emailService");
+      emailService.sendRoleChangeEmail(
+        member.email,
+        member.fullName,
+        organization.name,
+        oldRole,
+        newRole,
+        updatingUser.fullName
+      ).catch(err => console.error("Failed to send role change email:", err));
+
+      // Create changelog entry for role change
+      await changeLogService.createLog(
+        "Organization",
+        organization._id,
+        "member_role_updated",
+        updatedBy,
+        { userId, userName: member.fullName, role: oldRole },
+        { userId, userName: member.fullName, role: newRole }
+      );
     }
 
     return organization;
@@ -249,6 +329,16 @@ class OrganizationService {
         organizations: { orgId: organization._id },
       },
     });
+
+    // Create changelog entry
+    await changeLogService.createLog(
+      "Organization",
+      organization._id,
+      "member_removed",
+      removedBy,
+      { userId, userName: memberToRemove.fullName, role: memberOrgRole.role },
+      null
+    );
 
     return organization;
   }
@@ -399,6 +489,95 @@ class OrganizationService {
       completedCases,
       inProgressCases,
       todoCases: totalCases - completedCases - inProgressCases,
+    };
+  }
+
+  async getOrganizationStats(orgId, userId) {
+    const Session = require("../models/Session");
+    const Issue = require("../models/Issue");
+    const Feature = require("../models/Feature");
+    const Case = require("../models/Case");
+
+    // Check if organization exists and user is a member
+    const organization = await Organization.findById(orgId);
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
+
+    if (!organization.members.includes(userId)) {
+      throw new Error("User is not a member of this organization");
+    }
+
+    // Get all sessions for this org
+    const sessions = await Session.find({ orgId }) || [];
+    const sessionIds = sessions.map(s => s._id);
+
+    // Session statistics
+    const totalSessions = sessions.length;
+    const activeSessions = sessions.filter(s => s.status === 'active').length;
+    const completedSessions = sessions.filter(s => s.status === 'completed').length;
+    const plannedSessions = sessions.filter(s => s.status === 'planned').length;
+
+    // Issue statistics
+    const issues = await Issue.find({ orgId }) || [];
+    const totalIssues = issues.length;
+    const openIssues = issues.filter(i => i.status === 'open').length;
+    const inProgressIssues = issues.filter(i => i.status === 'in_progress').length;
+    const resolvedIssues = issues.filter(i => i.status === 'resolved').length;
+    const closedIssues = issues.filter(i => i.status === 'closed').length;
+
+    // Issue by priority
+    const criticalIssues = issues.filter(i => i.priority === 'critical').length;
+    const highIssues = issues.filter(i => i.priority === 'high').length;
+    const mediumIssues = issues.filter(i => i.priority === 'medium').length;
+    const lowIssues = issues.filter(i => i.priority === 'low').length;
+
+    // Feature and test case statistics
+    const features = sessionIds.length > 0 ? await Feature.find({ sessionId: { $in: sessionIds } }) : [];
+    const totalFeatures = features.length;
+    const featureIds = features.map(f => f._id);
+
+    const cases = featureIds.length > 0 ? await Case.find({ featureId: { $in: featureIds } }) : [];
+    const totalTestCases = cases.length;
+
+    // Assigned users across all sessions (with null safety)
+    const allAssignedUsers = [...new Set(
+      sessions
+        .filter(s => s.assignedTo && Array.isArray(s.assignedTo))
+        .flatMap(s => s.assignedTo.map(u => u.toString()))
+    )];
+    const totalAssignedUsers = allAssignedUsers.length;
+
+    return {
+      organization: {
+        name: organization.name,
+        description: organization.description,
+        membersCount: organization.members.length,
+      },
+      sessions: {
+        total: totalSessions,
+        active: activeSessions,
+        completed: completedSessions,
+        planned: plannedSessions,
+        assignedUsers: totalAssignedUsers,
+      },
+      issues: {
+        total: totalIssues,
+        open: openIssues,
+        inProgress: inProgressIssues,
+        resolved: resolvedIssues,
+        closed: closedIssues,
+        byPriority: {
+          critical: criticalIssues,
+          high: highIssues,
+          medium: mediumIssues,
+          low: lowIssues,
+        },
+      },
+      testing: {
+        totalFeatures,
+        totalTestCases,
+      },
     };
   }
 }

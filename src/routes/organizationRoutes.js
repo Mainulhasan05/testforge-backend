@@ -17,6 +17,7 @@ router.post(
   organizationController.createOrganization
 );
 router.get("/", authenticate, organizationController.getUserOrganizations);
+router.get("/:orgId/stats", authenticate, organizationController.getOrganizationStats);
 router.get("/:orgId", authenticate, organizationController.getOrganizationById);
 router.put(
   "/:orgId",

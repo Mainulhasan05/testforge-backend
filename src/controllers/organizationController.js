@@ -193,6 +193,24 @@ class OrganizationController {
       next(error);
     }
   }
+
+  async getOrganizationStats(req, res, next) {
+    try {
+      const { orgId } = req.params;
+
+      const stats = await organizationService.getOrganizationStats(orgId, req.user._id);
+
+      sendSuccess(res, stats, "Organization statistics retrieved successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("not a member")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
 }
 
 module.exports = new OrganizationController();

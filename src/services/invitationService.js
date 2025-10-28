@@ -53,13 +53,14 @@ class InvitationService {
       expiresAt,
     });
 
-    await emailService.sendInvitationEmail(
+    // Send invitation email (async, don't block response)
+    emailService.sendInvitationEmail(
       email,
       organization.name,
       inviter.fullName,
       token,
       role
-    );
+    ).catch(err => console.error('Failed to send invitation email:', err));
 
     return invitation;
   }
@@ -138,11 +139,12 @@ class InvitationService {
     invitation.status = "accepted";
     await invitation.save();
 
-    await emailService.sendWelcomeEmail(
+    // Send welcome email (async, don't block response)
+    emailService.sendWelcomeEmail(
       user.email,
       user.fullName,
       organization.name
-    );
+    ).catch(err => console.error('Failed to send welcome email:', err));
 
     return {
       organization,
@@ -217,13 +219,14 @@ class InvitationService {
     invitation.expiresAt = newExpiresAt;
     await invitation.save();
 
-    await emailService.sendInvitationEmail(
+    // Send invitation email (async, don't block response)
+    emailService.sendInvitationEmail(
       invitation.email,
       invitation.orgId.name,
       invitation.invitedBy.fullName,
       newToken,
       invitation.role
-    );
+    ).catch(err => console.error('Failed to send invitation email:', err));
 
     return invitation;
   }

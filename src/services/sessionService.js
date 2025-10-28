@@ -90,7 +90,37 @@ class SessionService {
       Session.countDocuments(query),
     ]);
 
-    return { sessions, total };
+    // Calculate stats for each session
+    const sessionsWithStats = await Promise.all(
+      sessions.map(async (session) => {
+        const sessionObj = session.toObject();
+
+        // Get all features for this session
+        const features = await Feature.find({ sessionId: session._id });
+        const featureIds = features.map((f) => f._id);
+
+        // Get all cases for these features
+        const cases = await Case.find({ featureId: { $in: featureIds } });
+        const caseIds = cases.map((c) => c._id);
+
+        // Get unique tested cases (cases that have at least one feedback)
+        const testedCases = caseIds.length > 0
+          ? await Feedback.distinct("caseId", {
+              caseId: { $in: caseIds },
+            })
+          : [];
+
+        // Map assignees to assignedTo for frontend consistency
+        sessionObj.assignedTo = sessionObj.assignees;
+        sessionObj.totalFeatures = features.length;
+        sessionObj.totalCases = cases.length;
+        sessionObj.completedCases = testedCases.length;
+
+        return sessionObj;
+      })
+    );
+
+    return { sessions: sessionsWithStats, total };
   }
 
   async getSessionById(sessionId, userId) {
@@ -363,26 +393,25 @@ class SessionService {
     const featureIds = features.map((f) => f._id);
     const cases = await Case.find({ featureId: { $in: featureIds } });
 
-    // Send assignment email notification
-    try {
-      await emailService.sendSessionAssignmentEmail(
-        userToAssign.email,
-        userToAssign.fullName,
-        session.title,
-        session.description,
-        organization.name,
-        assigningUser.fullName,
-        session._id.toString(),
-        session.startDate,
-        session.endDate,
-        features.length,
-        cases.length
-      );
+    // Send assignment email notification (async, don't block response)
+    emailService.sendSessionAssignmentEmail(
+      userToAssign.email,
+      userToAssign.fullName,
+      session.title,
+      session.description,
+      organization.name,
+      assigningUser.fullName,
+      session._id.toString(),
+      session.startDate,
+      session.endDate,
+      features.length,
+      cases.length
+    ).then(() => {
       console.log(`✓ Assignment email sent to ${userToAssign.email}`);
-    } catch (emailError) {
+    }).catch((emailError) => {
       console.error("✗ Failed to send assignment email:", emailError.message);
       // Don't throw error - assignment should succeed even if email fails
-    }
+    });
 
     // Return populated session
     return await Session.findById(sessionId)
@@ -433,20 +462,19 @@ class SessionService {
       session.toObject()
     );
 
-    // Send unassignment email notification
-    try {
-      await emailService.sendSessionUnassignmentEmail(
-        userToUnassign.email,
-        userToUnassign.fullName,
-        session.title,
-        organization.name,
-        unassigningUser.fullName
-      );
+    // Send unassignment email notification (async, don't block response)
+    emailService.sendSessionUnassignmentEmail(
+      userToUnassign.email,
+      userToUnassign.fullName,
+      session.title,
+      organization.name,
+      unassigningUser.fullName
+    ).then(() => {
       console.log(`✓ Unassignment email sent to ${userToUnassign.email}`);
-    } catch (emailError) {
+    }).catch((emailError) => {
       console.error("✗ Failed to send unassignment email:", emailError.message);
       // Don't throw error - unassignment should succeed even if email fails
-    }
+    });
 
     // Return populated session
     return await Session.findById(sessionId)

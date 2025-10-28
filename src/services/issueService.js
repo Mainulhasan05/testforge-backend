@@ -364,7 +364,9 @@ class IssueService {
     }
 
     const before = comment.toObject();
-    comment.remove();
+
+    // Use pull() instead of deprecated remove()
+    issue.comments.pull(commentId);
     await issue.save();
 
     // Log in changelog
@@ -402,15 +404,7 @@ class IssueService {
       comment
     });
 
-    // Update vote stats
-    issue.voteStats = {
-      confirm: issue.votes.filter(v => v.voteType === 'confirm').length,
-      cannot_reproduce: issue.votes.filter(v => v.voteType === 'cannot_reproduce').length,
-      needs_info: issue.votes.filter(v => v.voteType === 'needs_info').length,
-      critical: issue.votes.filter(v => v.voteType === 'critical').length
-    };
-
-    // Recalculate severity
+    // Recalculate severity (voteStats is auto-computed via virtual)
     issue.calculateSeverity();
 
     await issue.save();
@@ -431,15 +425,7 @@ class IssueService {
     if (voteIndex > -1) {
       issue.votes.splice(voteIndex, 1);
 
-      // Update vote stats
-      issue.voteStats = {
-        confirm: issue.votes.filter(v => v.voteType === 'confirm').length,
-        cannot_reproduce: issue.votes.filter(v => v.voteType === 'cannot_reproduce').length,
-        needs_info: issue.votes.filter(v => v.voteType === 'needs_info').length,
-        critical: issue.votes.filter(v => v.voteType === 'critical').length
-      };
-
-      // Recalculate severity
+      // Recalculate severity (voteStats is auto-computed via virtual)
       issue.calculateSeverity();
 
       await issue.save();

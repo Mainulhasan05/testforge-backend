@@ -174,7 +174,9 @@ const issueSchema = new mongoose.Schema({
     emailSubject: String
   }]
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
 // Indexes for efficient querying

@@ -255,13 +255,13 @@ class FeedbackService {
           return;
         }
 
-        // Send completion email
-        await emailService.sendCompletionEmail(
+        // Send completion email (async, don't block response)
+        emailService.sendCompletionEmail(
           user.email,
           user.fullName,
           session.title,
           progress.totalCases
-        );
+        ).catch(err => console.error('Failed to send completion email:', err));
 
         // Mark email as sent to avoid duplicate emails
         progress.completionEmailSent = true;
