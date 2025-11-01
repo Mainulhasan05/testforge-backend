@@ -25,6 +25,11 @@ router.put(
   validate(updateOrganizationSchema),
   organizationController.updateOrganization
 );
+router.delete(
+  "/:orgId",
+  authenticate,
+  organizationController.deleteOrganization
+);
 router.post(
   "/:orgId/members",
   authenticate,

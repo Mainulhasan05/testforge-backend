@@ -4,7 +4,7 @@ const changeLogSchema = new mongoose.Schema(
   {
     entityType: {
       type: String,
-      enum: ["Session", "Feature", "Case", "Feedback", "Issue"],
+      enum: ["Session", "Feature", "Case", "Feedback", "Issue", "Organization"],
       required: true,
     },
     entityId: {
@@ -25,7 +25,10 @@ const changeLogSchema = new mongoose.Schema(
         "comment_deleted",
         "jira_ticket_created",
         "jira_synced",
-        "jira_unlinked"
+        "jira_unlinked",
+        "member_added",
+        "member_removed",
+        "member_role_updated"
       ],
       required: true,
     },

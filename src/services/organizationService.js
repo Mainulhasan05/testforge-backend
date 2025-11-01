@@ -29,7 +29,7 @@ class OrganizationService {
     await changeLogService.createLog(
       "Organization",
       organization._id,
-      "created",
+      "create",
       ownerId,
       null,
       organization.toObject()
@@ -120,7 +120,7 @@ class OrganizationService {
     await changeLogService.createLog(
       "Organization",
       organization._id,
-      "updated",
+      "update",
       userId,
       before,
       organization.toObject()

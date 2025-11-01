@@ -85,6 +85,27 @@ class OrganizationController {
     }
   }
 
+  async deleteOrganization(req, res, next) {
+    try {
+      const { orgId } = req.params;
+
+      const organization = await organizationService.deleteOrganization(
+        orgId,
+        req.user._id
+      );
+
+      sendSuccess(res, organization, "Organization deleted successfully");
+    } catch (error) {
+      if (error.message.includes("not found")) {
+        return sendError(res, error.message, "NOT_FOUND", {}, 404);
+      }
+      if (error.message.includes("Only owners")) {
+        return sendError(res, error.message, "PERMISSION_DENIED", {}, 403);
+      }
+      next(error);
+    }
+  }
+
   async addMember(req, res, next) {
     try {
       const { orgId } = req.params;
