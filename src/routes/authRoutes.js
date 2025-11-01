@@ -21,6 +21,7 @@ router.post(
   authController.refreshToken
 );
 router.post("/logout", authenticate, authController.logout);
+router.get("/me", authenticate, authController.getMe);
 router.post(
   "/forgot-password",
   validate(forgotPasswordSchema),
