@@ -34,13 +34,13 @@ class SessionDashboardService {
     // 3. Get all features for this session
     const features = await Feature.find({ sessionId })
       .populate("createdBy", "fullName email")
-      .sort({ createdAt: -1 });
+      .sort({ sortValue: 1 });
 
     // 4. Get all cases for all features
     const featureIds = features.map((f) => f._id);
     const cases = await Case.find({ featureId: { $in: featureIds } })
       .populate("createdBy", "fullName email")
-      .sort({ createdAt: -1 });
+      .sort({ sortValue: 1 });
 
     // 5. Get all user's feedback for these cases
     const caseIds = cases.map((c) => c._id);
@@ -205,10 +205,9 @@ class SessionDashboardService {
     }
 
     // 2. Get all features
-    const features = await Feature.find({ sessionId }).populate(
-      "createdBy",
-      "fullName email"
-    );
+    const features = await Feature.find({ sessionId })
+      .populate("createdBy", "fullName email")
+      .sort({ sortValue: 1 });
 
     const featureStats = [];
 
